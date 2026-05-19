@@ -214,8 +214,8 @@
 @media (max-width: 768px) {
   .credits-panel {
     width: 100%;
-    height: min(38dvh, 19rem);
-    min-height: 12rem;
+    height: min(28dvh, 14rem);
+    min-height: 9rem;
     top: auto;
     bottom: 0;
     left: 0;
@@ -223,7 +223,7 @@
     border-left: none;
     border-top: 1px solid rgba(18, 18, 18, 0.1) !important;
     transform: translateY(100%);
-    border-radius: 18px 18px 0 0;
+    border-radius: 0;
     box-shadow: 0 -10px 30px rgba(18, 18, 18, 0.08);
     transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -237,15 +237,15 @@
   }
 
   .credits-scroll-region {
-    padding: 1.1rem 1rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.85rem 1rem calc(1.75rem + env(safe-area-inset-bottom, 0px));
   }
 
   .credits-bottom-fade {
-    height: 2.5rem;
+    height: 1.75rem;
   }
 
   .credit-title-container {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   .credit-line {

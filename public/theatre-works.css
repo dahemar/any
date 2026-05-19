@@ -1198,7 +1198,7 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
   }
 
   .flat-scene-grid.panel-open {
-    padding: 0 0 calc(15rem + env(safe-area-inset-bottom, 0px));
+    padding: 0 0 calc(11rem + env(safe-area-inset-bottom, 0px));
   }
 
   .flat-scenes-container {
