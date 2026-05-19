@@ -1,13 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { extractThumbnailPalette, type ThumbnailPalette } from '../lib/thumbnailColors';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { extractThumbnailPalette, prefetchThumbnailPalette, type ThumbnailPalette } from '../lib/thumbnailColors';
 import type { Work } from '../lib/types';
 import CreditsPanel from './CreditsPanel';
+import VideoGridCard from './VideoGridCard';
 
 interface VideoGridProps {
   works: Work[];
   initialWorkId?: string | null;
   onInitialWorkApplied?: () => void;
-  onAmbientChange?: (palette: ThumbnailPalette | null, active: boolean) => void;
+  onAmbientChange?: (palette: ThumbnailPalette | null, active: boolean, frozen?: boolean) => void;
   onTagClick?: (tagId: string) => void;
 }
 
@@ -28,6 +29,18 @@ function getSceneSource(scene?: Work['scenes'][number] | null): string | undefin
   if (typeof src !== 'string') return undefined;
   const trimmed = src.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function pauseVideo(video: HTMLVideoElement) {
+  try {
+    video.pause();
+    video.currentTime = 0;
+    video.muted = true;
+    video.removeAttribute('src');
+    video.load();
+  } catch {
+    // ignore pause/reset failures
+  }
 }
 
 export default function VideoGrid({
@@ -68,6 +81,8 @@ export default function VideoGrid({
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
+  const lastActiveIndexRef = useRef<number | null>(null);
+  const ambientRequestRef = useRef(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -76,14 +91,6 @@ export default function VideoGrid({
     setIsPlaying(true);
     onInitialWorkApplied?.();
   }, [initialWorkId, initialIndex, onInitialWorkApplied]);
-
-  useEffect(() => {
-    items.forEach((item) => {
-      if (item.thumbnail) {
-        void extractThumbnailPalette(item.thumbnail);
-      }
-    });
-  }, [items]);
 
   useEffect(() => {
     return () => {
@@ -117,29 +124,24 @@ export default function VideoGrid({
   }, [activeIndex, items.length]);
 
   useEffect(() => {
-    items.forEach((_, index) => {
-      const video = videoRefs.current[index];
-      if (!video) return;
+    const previousIndex = lastActiveIndexRef.current;
 
-      const isActive = index === activeIndex && isPlaying;
-      if (!isActive) {
-        try {
-          video.pause();
-          video.currentTime = 0;
-          video.muted = true;
-        } catch {
-          // ignore pause/reset failures
-        }
-      }
-    });
+    if (previousIndex !== null && previousIndex !== activeIndex) {
+      const previousVideo = videoRefs.current[previousIndex];
+      if (previousVideo) pauseVideo(previousVideo);
+    }
 
     if (activeIndex === null || !isPlaying) {
       activeVideoRef.current = null;
+      lastActiveIndexRef.current = activeIndex;
       return;
     }
 
     const activeVideo = videoRefs.current[activeIndex];
-    if (!activeVideo) return;
+    if (!activeVideo) {
+      lastActiveIndexRef.current = activeIndex;
+      return;
+    }
 
     activeVideoRef.current = activeVideo;
     activeVideo.currentTime = 0;
@@ -153,20 +155,17 @@ export default function VideoGrid({
         activeVideo.muted = false;
         activeVideo.volume = 1;
       } catch {
-        // ignore autoplay failures; user can click again
+        // ignore autoplay failures
       }
     });
-  }, [activeIndex, isPlaying, items]);
+
+    lastActiveIndexRef.current = activeIndex;
+  }, [activeIndex, isPlaying]);
 
   useEffect(() => {
     return () => {
       Object.values(videoRefs.current).forEach((video) => {
-        if (!video) return;
-        try {
-          video.pause();
-        } catch {
-          // ignore cleanup failures
-        }
+        if (video) pauseVideo(video);
       });
     };
   }, []);
@@ -192,61 +191,113 @@ export default function VideoGrid({
   const isPanelVisible = isMobileViewport ? activeItem !== null : true;
   const hasFocusState = hoveredIndex !== null || isPlaying;
 
-  const handleCardClick = (index: number) => {
-    if (activeIndex === index) {
-      setIsPlaying((prev) => !prev);
-      return;
-    }
-
-    setActiveIndex(index);
-    setIsPlaying(true);
-  };
-
-  const applyAmbientForThumbnail = (thumbnail?: string) => {
-    if (!thumbnail || isMobileViewport || !onAmbientChange) return;
-    void extractThumbnailPalette(thumbnail).then((palette) => {
-      onAmbientChange(palette, true);
+  const handleCardClick = useCallback((index: number) => {
+    setActiveIndex((current) => {
+      if (current === index) {
+        setIsPlaying((prev) => !prev);
+        return current;
+      }
+      setIsPlaying(true);
+      return index;
     });
-  };
+  }, []);
 
-  const handleCardMouseEnter = (index: number) => {
-    if (isMobileViewport) return;
-    setHoveredIndex(index);
-    applyAmbientForThumbnail(items[index]?.thumbnail);
-  };
+  const applyAmbientForThumbnail = useCallback(
+    (thumbnail?: string) => {
+      if (!thumbnail || isMobileViewport || !onAmbientChange) return;
 
-  const handleGridMouseLeave = (event: React.MouseEvent<HTMLDivElement>) => {
-    const nextTarget = event.relatedTarget as Node | null;
-    if (nextTarget && event.currentTarget.contains(nextTarget)) {
-      return;
-    }
+      const requestId = ambientRequestRef.current + 1;
+      ambientRequestRef.current = requestId;
 
-    setHoveredIndex(null);
+      void extractThumbnailPalette(thumbnail).then((palette) => {
+        if (ambientRequestRef.current !== requestId) return;
+        onAmbientChange(palette, true, isPlaying);
+      });
+    },
+    [isMobileViewport, isPlaying, onAmbientChange]
+  );
 
-    if (isMobileViewport) {
+  useEffect(() => {
+    if (isMobileViewport || !onAmbientChange || activeIndex === null || !isPlaying) return;
+
+    const thumbnail = items[activeIndex]?.thumbnail;
+    if (!thumbnail) return;
+
+    void extractThumbnailPalette(thumbnail).then((palette) => {
+      onAmbientChange(palette, true, true);
+    });
+  }, [activeIndex, isMobileViewport, isPlaying, items, onAmbientChange]);
+
+  const handleCardHover = useCallback(
+    (index: number) => {
+      if (isMobileViewport) return;
+      const thumbnail = items[index]?.thumbnail;
+      if (thumbnail) prefetchThumbnailPalette(thumbnail);
+      setHoveredIndex(index);
+      applyAmbientForThumbnail(thumbnail);
+    },
+    [applyAmbientForThumbnail, isMobileViewport, items]
+  );
+
+  const handleGridMouseLeave = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const nextTarget = event.relatedTarget as Node | null;
+      if (nextTarget && event.currentTarget.contains(nextTarget)) {
+        return;
+      }
+
+      setHoveredIndex(null);
+
+      if (isMobileViewport) {
+        onAmbientChange?.(null, false);
+        return;
+      }
+
+      const playingItem = activeIndex !== null ? items[activeIndex] : null;
+      if (isPlaying && playingItem?.thumbnail) {
+        applyAmbientForThumbnail(playingItem.thumbnail);
+        return;
+      }
+
       onAmbientChange?.(null, false);
-      return;
-    }
+    },
+    [activeIndex, applyAmbientForThumbnail, isMobileViewport, isPlaying, items, onAmbientChange]
+  );
 
-    const playingItem = activeIndex !== null ? items[activeIndex] : null;
-    if (isPlaying && playingItem?.thumbnail) {
-      applyAmbientForThumbnail(playingItem.thumbnail);
-      return;
-    }
+  const handleStepNavigation = useCallback(
+    (direction: -1 | 1) => {
+      if (items.length === 0) return;
+      setActiveIndex((current) => {
+        const startIndex = current ?? 0;
+        return (startIndex + direction + items.length) % items.length;
+      });
+      setIsPlaying(true);
+    },
+    [items.length]
+  );
 
-    onAmbientChange?.(null, false);
-  };
-
-  const handleStepNavigation = (direction: -1 | 1) => {
-    if (items.length === 0) {
-      return;
-    }
-
-    const startIndex = activeIndex ?? 0;
-    const nextIndex = (startIndex + direction + items.length) % items.length;
-    setActiveIndex(nextIndex);
+  const handlePlaying = useCallback((index: number) => {
     setIsPlaying(true);
-  };
+    setActiveIndex(index);
+  }, []);
+
+  const handlePause = useCallback(
+    (index: number) => {
+      setActiveIndex((current) => {
+        if (current === index) setIsPlaying(false);
+        return current;
+      });
+    },
+    []
+  );
+
+  const setItemRef = useCallback((id: string, element: HTMLDivElement | null) => {
+    itemRefs.current[id] = element;
+  }, []);
+
+  const setVideoRef = useCallback((index: number, element: HTMLVideoElement | null) => {
+    videoRefs.current[index] = element;
+  }, []);
 
   if (items.length === 0) {
     return <div className="video-grid-empty">No videos found.</div>;
@@ -260,100 +311,25 @@ export default function VideoGrid({
         aria-label="Video grid"
         onMouseLeave={handleGridMouseLeave}
       >
-          {items.map((item, index) => {
-            const isActive = index === activeIndex;
-            const isCurrentPlaying = isActive && isPlaying;
-
-            return (
-              <div
-                key={item.id}
-                role="listitem"
-                className={`flat-scene-item ${isActive ? 'active' : ''} ${isCurrentPlaying ? 'playing' : ''} ${hoveredIndex === index ? 'hovered' : ''}`}
-                ref={(element) => {
-                  itemRefs.current[item.id] = element;
-                }}
-              >
-                <button
-                  type="button"
-                  className="flat-scene-button"
-                  onClick={() => handleCardClick(index)}
-                  onMouseEnter={() => handleCardMouseEnter(index)}
-                  onFocus={() => handleCardMouseEnter(index)}
-                  aria-pressed={isActive}
-                  aria-label={`${isCurrentPlaying ? 'Pause' : 'Play'} ${item.title}`}
-                >
-                  <span className="flat-scene-media">
-                    <img src={item.thumbnail} alt="poster" className="flat-scene-poster" />
-                    <video
-                      className="flat-scene-video"
-                      ref={(element) => {
-                        videoRefs.current[index] = element;
-                      }}
-                      src={isActive ? item.src : undefined}
-                      poster={item.thumbnail}
-                      playsInline
-                      preload={isActive ? 'auto' : 'none'}
-                      muted
-                      loop
-                      onPlaying={() => {
-                        setIsPlaying(true);
-                        setActiveIndex(index);
-                      }}
-                      onPause={() => {
-                        // when paused, keep activeIndex but ensure state reflects paused
-                        if (activeIndex === index) setIsPlaying(false);
-                      }}
-                      style={{
-                        objectFit: 'cover',
-                        objectPosition: 'center center',
-                        transform: 'translateZ(0) scale(1.035)',
-                        transformOrigin: 'center center',
-                        willChange: 'transform',
-                      }}
-                    />
-                    <span className="play-pause-button" aria-hidden="true">
-                      {isCurrentPlaying ? '❚❚' : '▶'}
-                    </span>
-                  </span>
-                  <span className="flat-scene-caption">
-                    <span className="flat-scene-index">{String(index + 1).padStart(2, '0')}</span>
-                    <span className="flat-scene-title-row">
-                      <span className="flat-scene-title">{item.title}</span>
-                      {isCurrentPlaying ? (
-                        <span className="flat-scene-playing-indicator" aria-hidden="true">
-                          <span className="flat-scene-playing-line" />
-                          <span className="flat-scene-playing-line" />
-                          <span className="flat-scene-playing-line" />
-                          <span className="flat-scene-playing-line" />
-                        </span>
-                      ) : null}
-                    </span>
-                  </span>
-                </button>
-
-                {isMobileViewport && isPanelVisible && isActive && items.length > 1 ? (
-                  <div className="flat-scene-mobile-nav" aria-label="Video navigation">
-                    <button
-                      type="button"
-                      className="flat-scene-mobile-arrow flat-scene-mobile-arrow-prev"
-                      onClick={() => handleStepNavigation(-1)}
-                      aria-label="Previous video"
-                    >
-                      &lt;
-                    </button>
-                    <button
-                      type="button"
-                      className="flat-scene-mobile-arrow flat-scene-mobile-arrow-next"
-                      onClick={() => handleStepNavigation(1)}
-                      aria-label="Next video"
-                    >
-                      &gt;
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+        {items.map((item, index) => (
+          <VideoGridCard
+            key={item.id}
+            item={item}
+            index={index}
+            isActive={index === activeIndex}
+            isCurrentPlaying={index === activeIndex && isPlaying}
+            isHovered={hoveredIndex === index}
+            showMobileNav={isMobileViewport && isPanelVisible}
+            canStep={items.length > 1}
+            onCardClick={handleCardClick}
+            onCardHover={handleCardHover}
+            onStep={handleStepNavigation}
+            onPlaying={handlePlaying}
+            onPause={handlePause}
+            setItemRef={setItemRef}
+            setVideoRef={setVideoRef}
+          />
+        ))}
       </div>
 
       <CreditsPanel

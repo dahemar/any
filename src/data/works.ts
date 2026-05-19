@@ -4,7 +4,7 @@ export const works: Work[] = [
   {
     id: 'track-01',
     title: 'pedal ambient, soft',
-    description: 'A gentle harp-led ambient piece with soft pedal textures and a calm, open atmosphere.',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
     tags: ['ambient', 'soft', 'harp', 'pedal'],
     scenes: [
       {
@@ -18,7 +18,7 @@ export const works: Work[] = [
   {
     id: 'track-02',
     title: 'dark mystical epiphany',
-    description: 'Slow-building ambient darkness that opens into a luminous, mystical turn.',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
     tags: ['dark', 'mystical', 'ambient', 'pedal'],
     scenes: [
       {
@@ -32,7 +32,7 @@ export const works: Work[] = [
   {
     id: 'track-03',
     title: "it is or isn't",
-    description: 'Haunting electronic layers woven with harp — suspended, questioning, and cinematic.',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
     tags: ['haunting', 'electronic', 'harp', 'cinematic'],
     scenes: [
       {
@@ -46,7 +46,7 @@ export const works: Work[] = [
   {
     id: 'track-04',
     title: 'menial job',
-    description: 'Bittersweet melody with a restrained pulse — everyday weight rendered in warm tones.',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
     tags: ['bittersweet', 'melodic', 'warm', 'minimal'],
     scenes: [
       {
@@ -60,7 +60,7 @@ export const works: Work[] = [
   {
     id: 'track-05',
     title: 'birthday',
-    description: 'Sweet and minimal — a light, celebratory sketch with airy space and soft harmony.',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
     tags: ['sweet', 'minimal', 'light', 'celebratory'],
     scenes: [
       {
@@ -74,7 +74,7 @@ export const works: Work[] = [
   {
     id: 'track-06',
     title: 'any x zodanos lyra',
-    description: 'A collaborative lyra piece — spacious, resonant, and gently unfolding.',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
     tags: ['ambient', 'mystical', 'soft', 'harp'],
     scenes: [
       {
@@ -88,7 +88,7 @@ export const works: Work[] = [
   {
     id: 'track-07',
     title: 'atmanic',
-    description: 'Meditative layers that drift between stillness and a slow, inward glow.',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
     tags: ['mystical', 'ambient', 'cinematic', 'soft'],
     scenes: [
       {
@@ -102,7 +102,7 @@ export const works: Work[] = [
   {
     id: 'track-08',
     title: 'formless',
-    description: 'Open, weightless textures — shapeless harmony in pale, minimal light.',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
     tags: ['minimal', 'ambient', 'light', 'soft'],
     scenes: [
       {
@@ -116,7 +116,7 @@ export const works: Work[] = [
   {
     id: 'track-09',
     title: 'higher than love',
-    description: 'Warm melodic lines lifted above sentiment — tender, expansive, and bittersweet.',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
     tags: ['bittersweet', 'warm', 'melodic', 'sweet'],
     scenes: [
       {
@@ -158,6 +158,13 @@ export const instrumentTags: TagDefinition[] = [
 
 export const allSearchTags: TagDefinition[] = [...moodTags, ...instrumentTags];
 
+const worksByTagCache = new Map<string, Work[]>();
+
 export function getWorksForTag(tagId: string): Work[] {
-  return works.filter((work) => work.tags?.includes(tagId));
+  const cached = worksByTagCache.get(tagId);
+  if (cached) return cached;
+
+  const matched = works.filter((work) => work.tags?.includes(tagId));
+  worksByTagCache.set(tagId, matched);
+  return matched;
 }

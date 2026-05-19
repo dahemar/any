@@ -106,6 +106,12 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
   const intervalRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
   const lastActiveVideoRef = useRef<HTMLVideoElement | null>(null);
+  const freqBufferRef = useRef<Uint8Array | null>(null);
+  const waveBufferRef = useRef<Uint8Array | null>(null);
+  const freqScratchRef = useRef<number[]>([]);
+  const waveScratchRef = useRef<number[]>([]);
+  const lastDrawRef = useRef(0);
+  const silentFramesRef = useRef(0);
 
   const findPlayingVideo = () => {
     const videos = Array.from(document.querySelectorAll('video')) as HTMLVideoElement[];
@@ -120,24 +126,33 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
     }
   };
 
-  // Get audio data for visualizations
   const getAudioData = () => {
-    if (!GLOBAL_ANALYSER) return { waveform: [], frequencies: [] };
+    if (!GLOBAL_ANALYSER) return { waveform: waveScratchRef.current, frequencies: freqScratchRef.current };
 
     try {
       const bufferLength = GLOBAL_ANALYSER.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      GLOBAL_ANALYSER.getByteFrequencyData(dataArray);
+      if (!freqBufferRef.current || freqBufferRef.current.length !== bufferLength) {
+        freqBufferRef.current = new Uint8Array(bufferLength);
+        waveBufferRef.current = new Uint8Array(bufferLength);
+        freqScratchRef.current = new Array(bufferLength);
+        waveScratchRef.current = new Array(bufferLength);
+      }
 
-      const waveformData = new Uint8Array(bufferLength);
+      const dataArray = freqBufferRef.current;
+      const waveformData = waveBufferRef.current!;
+      GLOBAL_ANALYSER.getByteFrequencyData(dataArray);
       GLOBAL_ANALYSER.getByteTimeDomainData(waveformData);
-      
-      const waveform = Array.from(waveformData).map(value => (value - 128) / 128);
-      const frequencies = Array.from(dataArray).map(v => v / 255);
+
+      const frequencies = freqScratchRef.current;
+      const waveform = waveScratchRef.current;
+      for (let i = 0; i < bufferLength; i += 1) {
+        frequencies[i] = dataArray[i] / 255;
+        waveform[i] = (waveformData[i] - 128) / 128;
+      }
 
       return { waveform, frequencies };
-    } catch (error) {
-      return { waveform: [], frequencies: [] };
+    } catch {
+      return { waveform: waveScratchRef.current, frequencies: freqScratchRef.current };
     }
   };
 
@@ -292,28 +307,36 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
     ctx.stroke();
   };
 
-  // Animation loop
   useEffect(() => {
-    const animate = () => {
-      if (!isMountedRef.current) return;
+    const animate = (time: number) => {
+      intervalRef.current = requestAnimationFrame(animate);
+      if (!isMountedRef.current || document.hidden) return;
+      if (time - lastDrawRef.current < 40) return;
 
+      const playingVideo = videoRef?.current ?? findPlayingVideo();
+      if (!playingVideo || playingVideo.paused) {
+        silentFramesRef.current += 1;
+        if (silentFramesRef.current > 2) return;
+      } else {
+        silentFramesRef.current = 0;
+      }
+
+      lastDrawRef.current = time;
       ensureConnectedToPlayingVideo();
-      
+
       const { waveform, frequencies } = getAudioData();
       drawWaveform(waveform, frequencies);
-      
-      intervalRef.current = requestAnimationFrame(animate);
     };
-    
-    animate();
-    
+
+    intervalRef.current = requestAnimationFrame(animate);
+
     return () => {
       isMountedRef.current = false;
       if (intervalRef.current) {
         cancelAnimationFrame(intervalRef.current);
       }
     };
-  }, []);
+  }, [videoRef]);
 
   // Connect and reconnect video element to analyser when it changes
   useEffect(() => {

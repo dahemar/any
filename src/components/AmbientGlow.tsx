@@ -1,23 +1,49 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { ThumbnailPalette } from '../lib/thumbnailColors';
 import './AmbientGlow.css';
 
 interface AmbientGlowProps {
   palette: ThumbnailPalette | null;
   active: boolean;
+  /** Locks gradient motion while a piece is playing. */
+  frozen?: boolean;
 }
 
 function paletteKey(palette: ThumbnailPalette): string {
   return `${palette.primary}|${palette.secondary}|${palette.accent}`;
 }
 
-export default function AmbientGlow({ palette, active }: AmbientGlowProps) {
+const FRAME_MS = 40;
+
+const STATIC_MOTION = {
+  '--audio-level': '0.08',
+  '--audio-low': '0.08',
+  '--glow-shift-x': '0px',
+  '--glow-rise': '0px',
+  '--glow-scale': '1.025',
+  '--glow-ripple': '0px',
+  '--audio-white-alpha': '0.16',
+  '--audio-side-alpha': '0.14',
+  '--audio-bottom-alpha': '0.34',
+  '--audio-bottom-light-alpha': '0.06',
+  '--audio-bottom-light-alpha-soft': '0.048',
+} as const;
+
+function applyStaticMotion(stack: HTMLDivElement) {
+  for (const [key, value] of Object.entries(STATIC_MOTION)) {
+    stack.style.setProperty(key, value);
+  }
+}
+
+export default function AmbientGlow({ palette, active, frozen = false }: AmbientGlowProps) {
   const [frontSlot, setFrontSlot] = useState<0 | 1>(0);
   const [slots, setSlots] = useState<[ThumbnailPalette | null, ThumbnailPalette | null]>([null, null]);
   const lastKeyRef = useRef<string | null>(null);
   const stackRef = useRef<HTMLDivElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const audioDataRef = useRef<Uint8Array | null>(null);
+  const lastFrameRef = useRef(0);
+  const lastStyleRef = useRef('');
   const motionRef = useRef({
     level: 0,
     low: 0,
@@ -50,7 +76,13 @@ export default function AmbientGlow({ palette, active }: AmbientGlowProps) {
 
   useEffect(() => {
     const stack = stackRef.current;
-    if (!show || !stack || typeof window === 'undefined') {
+    if (!stack || typeof window === 'undefined') return undefined;
+
+    if (frozen && show) {
+      applyStaticMotion(stack);
+    }
+
+    if (!show || frozen) {
       if (animationFrameRef.current !== null) {
         window.cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -58,16 +90,14 @@ export default function AmbientGlow({ palette, active }: AmbientGlowProps) {
       return undefined;
     }
 
-    let lastFrame = 0;
-
     const animate = (time: number) => {
       animationFrameRef.current = window.requestAnimationFrame(animate);
 
-      // Keep this around 30fps: enough for a liquid shimmer, cheaper than full-rate updates.
-      if (time - lastFrame < 33) return;
-      lastFrame = time;
+      if (document.hidden) return;
+      if (time - lastFrameRef.current < FRAME_MS) return;
+      lastFrameRef.current = time;
 
-      const analyser = (window as any).GLOBAL_ANALYSER as AnalyserNode | undefined;
+      const analyser = (window as Window & { GLOBAL_ANALYSER?: AnalyserNode }).GLOBAL_ANALYSER;
       let targetLevel = 0.08;
       let targetLow = 0.08;
 
@@ -99,17 +129,29 @@ export default function AmbientGlow({ palette, active }: AmbientGlowProps) {
       const ripple = Math.sin(motion.phase) * motion.level;
       const counterRipple = Math.cos(motion.phase * 0.72) * motion.low;
 
-      stack.style.setProperty('--audio-level', motion.level.toFixed(3));
-      stack.style.setProperty('--audio-low', motion.low.toFixed(3));
-      stack.style.setProperty('--glow-shift-x', `${(ripple * 10).toFixed(2)}px`);
-      stack.style.setProperty('--glow-rise', `${(-motion.low * 14).toFixed(2)}px`);
-      stack.style.setProperty('--glow-scale', (1.025 + motion.level * 0.045).toFixed(3));
-      stack.style.setProperty('--glow-ripple', `${(counterRipple * 8).toFixed(2)}px`);
-      stack.style.setProperty('--audio-white-alpha', (0.16 + motion.low * 0.16).toFixed(3));
-      stack.style.setProperty('--audio-side-alpha', (0.14 + motion.low * 0.08).toFixed(3));
-      stack.style.setProperty('--audio-bottom-alpha', (0.34 + motion.level * 0.18).toFixed(3));
-      stack.style.setProperty('--audio-bottom-light-alpha', (0.06 + motion.low * 0.12).toFixed(3));
-      stack.style.setProperty('--audio-bottom-light-alpha-soft', (0.048 + motion.low * 0.096).toFixed(3));
+      const styleBlock = [
+        `--audio-level:${motion.level.toFixed(3)}`,
+        `--audio-low:${motion.low.toFixed(3)}`,
+        `--glow-shift-x:${(ripple * 10).toFixed(2)}px`,
+        `--glow-rise:${(-motion.low * 14).toFixed(2)}px`,
+        `--glow-scale:${(1.025 + motion.level * 0.045).toFixed(3)}`,
+        `--glow-ripple:${(counterRipple * 8).toFixed(2)}px`,
+        `--audio-white-alpha:${(0.16 + motion.low * 0.16).toFixed(3)}`,
+        `--audio-side-alpha:${(0.14 + motion.low * 0.08).toFixed(3)}`,
+        `--audio-bottom-alpha:${(0.34 + motion.level * 0.18).toFixed(3)}`,
+        `--audio-bottom-light-alpha:${(0.06 + motion.low * 0.12).toFixed(3)}`,
+        `--audio-bottom-light-alpha-soft:${(0.048 + motion.low * 0.096).toFixed(3)}`,
+      ].join(';');
+
+      if (styleBlock === lastStyleRef.current) return;
+      lastStyleRef.current = styleBlock;
+
+      const parts = styleBlock.split(';');
+      for (const part of parts) {
+        const colon = part.indexOf(':');
+        if (colon === -1) continue;
+        stack.style.setProperty(part.slice(0, colon), part.slice(colon + 1));
+      }
     };
 
     animationFrameRef.current = window.requestAnimationFrame(animate);
@@ -119,8 +161,9 @@ export default function AmbientGlow({ palette, active }: AmbientGlowProps) {
         window.cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
+      lastStyleRef.current = '';
     };
-  }, [show]);
+  }, [show, frozen]);
 
   const renderLayer = (slot: 0 | 1, layerPalette: ThumbnailPalette | null) => {
     if (!layerPalette) return null;
@@ -135,14 +178,18 @@ export default function AmbientGlow({ palette, active }: AmbientGlowProps) {
             '--glow-primary': layerPalette.primary,
             '--glow-secondary': layerPalette.secondary,
             '--glow-accent': layerPalette.accent,
-          } as React.CSSProperties
+          } as CSSProperties
         }
       />
     );
   };
 
   return (
-    <div ref={stackRef} className={`ambient-glow-stack ${show ? 'is-active' : ''}`} aria-hidden="true">
+    <div
+      ref={stackRef}
+      className={`ambient-glow-stack ${show ? 'is-active' : ''} ${frozen && show ? 'is-static' : ''}`}
+      aria-hidden="true"
+    >
       {renderLayer(0, slots[0])}
       {renderLayer(1, slots[1])}
     </div>

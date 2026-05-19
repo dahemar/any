@@ -5,6 +5,7 @@ export interface ThumbnailPalette {
 }
 
 const paletteCache = new Map<string, ThumbnailPalette>();
+const pending = new Map<string, Promise<ThumbnailPalette>>();
 
 const FALLBACK_PALETTE: ThumbnailPalette = {
   primary: 'rgb(238, 228, 248)',
@@ -130,7 +131,7 @@ function samplePaletteFromImageData(data: Uint8ClampedArray): ThumbnailPalette {
   const buckets = new Map<string, { r: number; g: number; b: number; count: number }>();
   const midBuckets = new Map<string, { r: number; g: number; b: number; count: number }>();
 
-  for (let i = 0; i < data.length; i += 16) {
+  for (let i = 0; i < data.length; i += 24) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
@@ -170,14 +171,7 @@ function samplePaletteFromImageData(data: Uint8ClampedArray): ThumbnailPalette {
   };
 }
 
-export function extractThumbnailPalette(imageUrl: string): Promise<ThumbnailPalette> {
-  const cached = paletteCache.get(imageUrl);
-  if (cached) return Promise.resolve(cached);
-
-  if (typeof window === 'undefined') {
-    return Promise.resolve(FALLBACK_PALETTE);
-  }
-
+function decodePalette(imageUrl: string): Promise<ThumbnailPalette> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -186,7 +180,7 @@ export function extractThumbnailPalette(imageUrl: string): Promise<ThumbnailPale
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const size = 48;
+        const size = 32;
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -203,7 +197,39 @@ export function extractThumbnailPalette(imageUrl: string): Promise<ThumbnailPale
     };
 
     img.onerror = () => resolve(FALLBACK_PALETTE);
-
     img.src = imageUrl;
   });
+}
+
+export function extractThumbnailPalette(imageUrl: string): Promise<ThumbnailPalette> {
+  const cached = paletteCache.get(imageUrl);
+  if (cached) return Promise.resolve(cached);
+
+  const inFlight = pending.get(imageUrl);
+  if (inFlight) return inFlight;
+
+  if (typeof window === 'undefined') {
+    return Promise.resolve(FALLBACK_PALETTE);
+  }
+
+  const promise = decodePalette(imageUrl).finally(() => {
+    pending.delete(imageUrl);
+  });
+  pending.set(imageUrl, promise);
+  return promise;
+}
+
+/** Warm palette cache when the browser is idle (hover/play still decode on demand). */
+export function prefetchThumbnailPalette(imageUrl: string): void {
+  if (!imageUrl || paletteCache.has(imageUrl) || pending.has(imageUrl)) return;
+
+  const run = () => {
+    void extractThumbnailPalette(imageUrl);
+  };
+
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(run, { timeout: 2500 });
+  } else {
+    window.setTimeout(run, 120);
+  }
 }

@@ -975,26 +975,22 @@ body,
   width: 100%;
   height: auto;
   position: relative;
-  transition:
-    opacity 0.24s cubic-bezier(0.33, 1, 0.32, 1),
-    filter 0.24s cubic-bezier(0.33, 1, 0.32, 1);
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 12rem;
+  transition: opacity 0.24s cubic-bezier(0.33, 1, 0.32, 1);
   opacity: 1;
-  filter: grayscale(0%) blur(0px);
 }
 
 /* Cinematic Dimming / Foco Selectivo con Efecto Vaporoso */
 .flat-scenes-container.has-focus-state .flat-scene-item {
-  opacity: 0.68;
-  filter: grayscale(24%) blur(1px);
-  transition:
-    opacity 0.24s cubic-bezier(0.33, 1, 0.32, 1),
-    filter 0.24s cubic-bezier(0.33, 1, 0.32, 1);
+  opacity: 0.55;
+  transition: opacity 0.24s cubic-bezier(0.33, 1, 0.32, 1);
 }
 
 .flat-scenes-container.has-focus-state .flat-scene-item.playing,
 .flat-scenes-container.has-focus-state .flat-scene-item.hovered {
   opacity: 1;
-  filter: grayscale(0%) blur(0px);
 }
 
 .flat-scene-button {
@@ -1048,6 +1044,9 @@ body,
   object-position: center center;
   transform: translateZ(0) scale(1.035);
   transform-origin: center center;
+}
+
+.flat-scene-item.playing .flat-scene-video {
   will-change: transform;
 }
 
