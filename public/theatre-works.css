@@ -769,6 +769,49 @@ body {
   --any-muted: #6d6d6d;
   --any-line: rgba(18, 18, 18, 0.1);
   --any-accent: #7a2131;
+  --ambient-opacity: 0;
+  --ambient-primary: transparent;
+  --ambient-secondary: transparent;
+  --ambient-accent: transparent;
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid var(--any-line, rgba(18, 18, 18, 0.12));
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--any-text, #121212);
+  font-size: 0.74rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  border-radius: 0;
+  cursor: default;
+}
+
+button.tag-pill,
+button.search-tag-pill {
+  cursor: pointer;
+}
+
+.tag-pill--compact {
+  font-size: 0.68rem;
+  padding: 0.22rem 0.45rem;
+}
+
+.theatre-works,
+.fixed-viewer,
+.video-section {
+  background-color: transparent !important;
+}
+
+.any-app {
+  background: linear-gradient(
+    180deg,
+    var(--any-bg) 0%,
+    color-mix(in srgb, var(--any-bg-soft) 88%, var(--any-bg)) 100%
+  );
 }
 
 body,
@@ -904,8 +947,9 @@ body,
 
 .flat-scene-grid {
   width: 100%;
-  min-height: 100vh;
-  padding: 1.75rem;
+  min-height: calc(100vh - 3.5rem);
+  min-height: calc(100dvh - 3.5rem);
+  padding: 0 1.75rem 1.75rem;
   box-sizing: border-box;
   transition: padding-right 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -931,21 +975,24 @@ body,
   width: 100%;
   height: auto;
   position: relative;
-  transition: opacity 1.8s cubic-bezier(0.22, 1, 0.36, 1), filter 1.8s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, filter;
+  transition:
+    opacity 0.24s cubic-bezier(0.33, 1, 0.32, 1),
+    filter 0.24s cubic-bezier(0.33, 1, 0.32, 1);
   opacity: 1;
   filter: grayscale(0%) blur(0px);
 }
 
 /* Cinematic Dimming / Foco Selectivo con Efecto Vaporoso */
-.flat-scenes-container:has(.flat-scene-item:hover, .flat-scene-item.playing) .flat-scene-item {
-  opacity: 0.60;
-  filter: grayscale(42%) blur(2.5px);
-  transition: opacity 1.8s cubic-bezier(0.22, 1, 0.36, 1), filter 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+.flat-scenes-container.has-focus-state .flat-scene-item {
+  opacity: 0.68;
+  filter: grayscale(24%) blur(1px);
+  transition:
+    opacity 0.24s cubic-bezier(0.33, 1, 0.32, 1),
+    filter 0.24s cubic-bezier(0.33, 1, 0.32, 1);
 }
 
-.flat-scenes-container:has(.flat-scene-item:hover, .flat-scene-item.playing) .flat-scene-item.playing,
-.flat-scenes-container:has(.flat-scene-item:hover, .flat-scene-item.playing) .flat-scene-item:hover {
+.flat-scenes-container.has-focus-state .flat-scene-item.playing,
+.flat-scenes-container.has-focus-state .flat-scene-item.hovered {
   opacity: 1;
   filter: grayscale(0%) blur(0px);
 }
@@ -1170,6 +1217,29 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
 
 ::-webkit-scrollbar-thumb {
   background: rgba(18, 18, 18, 0.2);
+}
+
+/* Anyways app: allow full multi-row grid (9+ pieces) to scroll on desktop */
+.theatre-works:has(.any-app) {
+  overflow: visible;
+}
+
+.theatre-works:has(.any-app) .fixed-viewer,
+.theatre-works:has(.any-app) .viewer-container {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+.video-section.full-width:has(.any-app) {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+.video-section.full-width:has(.any-app) .scene-grid.flat-scene-grid {
+  height: auto;
+  overflow: visible;
 }
 
 @media (max-width: 768px) {

@@ -14,6 +14,8 @@ export interface Scene {
 export interface Work {
   id: string;
   title: string;
+  description?: string;
+  tags?: string[];
   scenes: Scene[];
   credits?: Credit[];
   meta?: Record<string, string>;
@@ -23,4 +25,12 @@ export interface Work {
 export interface WorksStats {
   totalWorks: number;
   totalVideos: number;
+}
+
+export type SiteSection = 'anyways' | 'search' | 'contact';
+
+export interface TagDefinition {
+  id: string;
+  label: string;
+  category: 'mood' | 'instrument';
 }

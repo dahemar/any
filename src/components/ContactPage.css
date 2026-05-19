@@ -1,0 +1,22 @@
+.contact-page {
+  padding: 0 1.75rem 3rem;
+}
+
+.contact-email {
+  font: inherit;
+  font-size: 0.92rem;
+  letter-spacing: -0.01em;
+  color: var(--any-text, #121212);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.contact-email:hover {
+  color: var(--any-accent, #7a2131);
+}
+
+@media (max-width: 768px) {
+  .contact-page {
+    padding: 0 1rem 2.5rem;
+  }
+}

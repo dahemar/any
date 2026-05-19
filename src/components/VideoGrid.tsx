@@ -1,17 +1,24 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { Credit, Work } from '../lib/types';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { extractThumbnailPalette, type ThumbnailPalette } from '../lib/thumbnailColors';
+import type { Work } from '../lib/types';
 import CreditsPanel from './CreditsPanel';
 
 interface VideoGridProps {
   works: Work[];
+  initialWorkId?: string | null;
+  onInitialWorkApplied?: () => void;
+  onAmbientChange?: (palette: ThumbnailPalette | null, active: boolean) => void;
+  onTagClick?: (tagId: string) => void;
 }
 
 interface FlatVideoItem {
   id: string;
+  workId: string;
   title: string;
+  description?: string;
+  tags: string[];
   src?: string;
   thumbnail?: string;
-  credits: Credit[];
   workIndex: number;
   sceneIndex: number;
 }
@@ -23,20 +30,37 @@ function getSceneSource(scene?: Work['scenes'][number] | null): string | undefin
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-export default function VideoGrid({ works }: VideoGridProps) {
-  const items: FlatVideoItem[] = works.flatMap((work, workIndex) =>
-    work.scenes.map((scene, sceneIndex) => ({
-      id: `${work.id}-${scene.id}`,
-      title: work.title,
-      src: getSceneSource(scene),
-      thumbnail: scene.thumbnail,
-      credits: work.credits ?? [],
-      workIndex,
-      sceneIndex,
-    }))
+export default function VideoGrid({
+  works,
+  initialWorkId,
+  onInitialWorkApplied,
+  onAmbientChange,
+  onTagClick,
+}: VideoGridProps) {
+  const items: FlatVideoItem[] = useMemo(
+    () =>
+      works.flatMap((work, workIndex) =>
+        work.scenes.map((scene, sceneIndex) => ({
+          id: `${work.id}-${scene.id}`,
+          workId: work.id,
+          title: work.title,
+          description: work.description,
+          tags: work.tags ?? [],
+          src: getSceneSource(scene),
+          thumbnail: scene.thumbnail,
+          workIndex,
+          sceneIndex,
+        }))
+      ),
+    [works]
   );
 
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const initialIndex =
+    initialWorkId != null ? items.findIndex((item) => item.workId === initialWorkId) : -1;
+
+  const [activeIndex, setActiveIndex] = useState<number | null>(
+    initialIndex >= 0 ? initialIndex : null
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
@@ -44,7 +68,28 @@ export default function VideoGrid({ works }: VideoGridProps) {
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
-  const previousRectsRef = useRef<Record<string, DOMRect>>({});
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (initialWorkId == null || initialIndex < 0) return;
+    setActiveIndex(initialIndex);
+    setIsPlaying(true);
+    onInitialWorkApplied?.();
+  }, [initialWorkId, initialIndex, onInitialWorkApplied]);
+
+  useEffect(() => {
+    items.forEach((item) => {
+      if (item.thumbnail) {
+        void extractThumbnailPalette(item.thumbnail);
+      }
+    });
+  }, [items]);
+
+  useEffect(() => {
+    return () => {
+      onAmbientChange?.(null, false);
+    };
+  }, [onAmbientChange]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -126,39 +171,6 @@ export default function VideoGrid({ works }: VideoGridProps) {
     };
   }, []);
 
-  useLayoutEffect(() => {
-    const nextRects: Record<string, DOMRect> = {};
-
-    items.forEach((item) => {
-      const element = itemRefs.current[item.id];
-      if (!element) return;
-
-      const rect = element.getBoundingClientRect();
-      nextRects[item.id] = rect;
-
-      const previousRect = previousRectsRef.current[item.id];
-      if (!previousRect) return;
-
-      const deltaX = previousRect.left - rect.left;
-      const deltaY = previousRect.top - rect.top;
-
-      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
-
-      element.animate(
-        [
-          { transform: `translate(${deltaX}px, ${deltaY}px)` },
-          { transform: 'translate(0, 0)' },
-        ],
-        {
-          duration: 320,
-          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-        }
-      );
-    });
-
-    previousRectsRef.current = nextRects;
-  }, [activeIndex, items]);
-
   useEffect(() => {
     if (!isMobileViewport || activeIndex === null) {
       return;
@@ -178,6 +190,7 @@ export default function VideoGrid({ works }: VideoGridProps) {
 
   const activeItem = activeIndex !== null ? items[activeIndex] : null;
   const isPanelVisible = isMobileViewport ? activeItem !== null : true;
+  const hasFocusState = hoveredIndex !== null || isPlaying;
 
   const handleCardClick = (index: number) => {
     if (activeIndex === index) {
@@ -187,6 +200,41 @@ export default function VideoGrid({ works }: VideoGridProps) {
 
     setActiveIndex(index);
     setIsPlaying(true);
+  };
+
+  const applyAmbientForThumbnail = (thumbnail?: string) => {
+    if (!thumbnail || isMobileViewport || !onAmbientChange) return;
+    void extractThumbnailPalette(thumbnail).then((palette) => {
+      onAmbientChange(palette, true);
+    });
+  };
+
+  const handleCardMouseEnter = (index: number) => {
+    if (isMobileViewport) return;
+    setHoveredIndex(index);
+    applyAmbientForThumbnail(items[index]?.thumbnail);
+  };
+
+  const handleGridMouseLeave = (event: React.MouseEvent<HTMLDivElement>) => {
+    const nextTarget = event.relatedTarget as Node | null;
+    if (nextTarget && event.currentTarget.contains(nextTarget)) {
+      return;
+    }
+
+    setHoveredIndex(null);
+
+    if (isMobileViewport) {
+      onAmbientChange?.(null, false);
+      return;
+    }
+
+    const playingItem = activeIndex !== null ? items[activeIndex] : null;
+    if (isPlaying && playingItem?.thumbnail) {
+      applyAmbientForThumbnail(playingItem.thumbnail);
+      return;
+    }
+
+    onAmbientChange?.(null, false);
   };
 
   const handleStepNavigation = (direction: -1 | 1) => {
@@ -206,7 +254,12 @@ export default function VideoGrid({ works }: VideoGridProps) {
 
   return (
     <div className={`scene-grid flat-scene-grid ${isPanelVisible ? 'panel-open' : ''}`}>
-      <div className="flat-scenes-container" role="list" aria-label="Video grid">
+      <div
+        className={`flat-scenes-container ${hasFocusState ? 'has-focus-state' : ''}`}
+        role="list"
+        aria-label="Video grid"
+        onMouseLeave={handleGridMouseLeave}
+      >
           {items.map((item, index) => {
             const isActive = index === activeIndex;
             const isCurrentPlaying = isActive && isPlaying;
@@ -215,7 +268,7 @@ export default function VideoGrid({ works }: VideoGridProps) {
               <div
                 key={item.id}
                 role="listitem"
-                className={`flat-scene-item ${isActive ? 'active' : ''} ${isCurrentPlaying ? 'playing' : ''}`}
+                className={`flat-scene-item ${isActive ? 'active' : ''} ${isCurrentPlaying ? 'playing' : ''} ${hoveredIndex === index ? 'hovered' : ''}`}
                 ref={(element) => {
                   itemRefs.current[item.id] = element;
                 }}
@@ -224,6 +277,8 @@ export default function VideoGrid({ works }: VideoGridProps) {
                   type="button"
                   className="flat-scene-button"
                   onClick={() => handleCardClick(index)}
+                  onMouseEnter={() => handleCardMouseEnter(index)}
+                  onFocus={() => handleCardMouseEnter(index)}
                   aria-pressed={isActive}
                   aria-label={`${isCurrentPlaying ? 'Pause' : 'Play'} ${item.title}`}
                 >
@@ -234,10 +289,10 @@ export default function VideoGrid({ works }: VideoGridProps) {
                       ref={(element) => {
                         videoRefs.current[index] = element;
                       }}
-                      src={item.src}
+                      src={isActive ? item.src : undefined}
                       poster={item.thumbnail}
                       playsInline
-                      preload="auto"
+                      preload={isActive ? 'auto' : 'none'}
                       muted
                       loop
                       onPlaying={() => {
@@ -304,8 +359,10 @@ export default function VideoGrid({ works }: VideoGridProps) {
       <CreditsPanel
         isVisible={isPanelVisible}
         title={activeItem?.title}
-        credits={activeItem?.credits ?? []}
+        description={activeItem?.description}
+        tags={activeItem?.tags ?? []}
         emptyMessage="click on one of the videos"
+        onTagClick={onTagClick}
         videoRef={activeVideoRef}
         currentWorkIndex={activeItem?.workIndex ?? 0}
         currentSceneIndex={activeItem?.sceneIndex ?? 0}

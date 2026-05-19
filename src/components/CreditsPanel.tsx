@@ -2,16 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './CreditsPanel.css';
 import VUMeter from './VUMeter';
 
-interface Credit {
-  role: string;
-  name: string;
-}
-
 interface CreditsPanelProps {
   isVisible: boolean;
   title?: string;
-  credits?: Credit[];
+  description?: string;
+  tags?: string[];
   emptyMessage?: string;
+  onTagClick?: (tagId: string) => void;
   onPrevWork?: (() => void) | undefined;
   onNextWork?: (() => void) | undefined;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
@@ -19,11 +16,13 @@ interface CreditsPanelProps {
   currentSceneIndex?: number;
 }
 
-export default function CreditsPanel({ 
-  isVisible, 
+export default function CreditsPanel({
+  isVisible,
   title,
-  credits = [],
+  description,
+  tags = [],
   emptyMessage,
+  onTagClick,
   onPrevWork,
   onNextWork,
   videoRef,
@@ -42,7 +41,8 @@ export default function CreditsPanel({
     }
 
     const threshold = 8;
-    const hasHiddenContentBelow = scrollRegion.scrollTop + scrollRegion.clientHeight < scrollRegion.scrollHeight - threshold;
+    const hasHiddenContentBelow =
+      scrollRegion.scrollTop + scrollRegion.clientHeight < scrollRegion.scrollHeight - threshold;
     setShowBottomFade(hasHiddenContentBelow);
   }, []);
 
@@ -62,7 +62,7 @@ export default function CreditsPanel({
       scrollRegion.removeEventListener('scroll', handlePanelScroll);
       window.removeEventListener('resize', handleViewportChange);
     };
-  }, [isVisible, credits, title, updateBottomFade]);
+  }, [isVisible, description, tags, title, updateBottomFade]);
 
   if (!isVisible) {
     return null;
@@ -72,7 +72,8 @@ export default function CreditsPanel({
     e.stopPropagation();
   };
 
-  const isMobileViewport = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+  const isMobileViewport =
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
 
   return (
     <div
@@ -90,27 +91,51 @@ export default function CreditsPanel({
             <div className="credits-empty-state">{emptyMessage}</div>
           ) : null}
 
-          {credits && credits.map((credit, index) => (
-            <div key={index} className="credit-line">
-              <span className="credit-role">{credit.role}</span>
-              <span className="credit-name">{credit.name}</span>
+          {description ? <p className="credits-description">{description}</p> : null}
+
+          {tags.length > 0 ? (
+            <div className="credits-tags" role="list" aria-label="Tags">
+              {tags.map((tag) =>
+                onTagClick ? (
+                  <button
+                    key={tag}
+                    type="button"
+                    className="tag-pill credits-tag-pill credits-tag-pill--link"
+                    role="listitem"
+                    onClick={() => onTagClick(tag)}
+                  >
+                    {tag}
+                  </button>
+                ) : (
+                  <span key={tag} className="tag-pill credits-tag-pill" role="listitem">
+                    {tag}
+                  </span>
+                )
+              )}
             </div>
-          ))}
+          ) : null}
         </div>
       </div>
 
       <div className="credits-bottom-fade" aria-hidden="true" />
 
-      {/* Project navigation inside credits (desktop) - rendered only if handlers provided */}
       {(onPrevWork || onNextWork) && (
         <div className="credits-project-nav">
           {onPrevWork ? (
-            <button className="project-nav prev" onClick={onPrevWork} aria-label="Previous project">‹ prev</button>
-          ) : <div />}
+            <button className="project-nav prev" onClick={onPrevWork} aria-label="Previous project">
+              ‹ prev
+            </button>
+          ) : (
+            <div />
+          )}
 
           {onNextWork ? (
-            <button className="project-nav next" onClick={onNextWork} aria-label="Next project">next ›</button>
-          ) : <div />}
+            <button className="project-nav next" onClick={onNextWork} aria-label="Next project">
+              next ›
+            </button>
+          ) : (
+            <div />
+          )}
         </div>
       )}
 

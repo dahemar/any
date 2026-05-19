@@ -1,117 +1,8 @@
 ---
-import VideoGrid from '../components/VideoGrid';
-import type { Work } from '../lib/types';
+import App from '../components/App';
+import { works } from '../data/works';
 
 export const prerender = false;
-
-const works: Work[] = [
-      {
-        id: 'track-01',
-        title: 'pedal ambient, soft',
-        scenes: [
-          {
-            id: 'scene-01',
-            videoUrl: '/content/videos/track-01-final.mp4?v=5',
-            thumbnail: '/content/posters/track-01-crop.jpg?v=2',
-          },
-        ],
-    credits: [
-      { role: 'audio', name: 'track 1 pedal ambient, soft' },
-      { role: 'image', name: 'track 1 pedal soft ambient harp' },
-      { role: 'source', name: 'local content test' },
-    ],
-    meta: {
-      year: '2026',
-      location: 'local',
-      format: 'hardcoded video',
-    },
-  },
-      {
-        id: 'track-02',
-        title: 'dark mystical epiphany',
-        scenes: [
-          {
-            id: 'scene-01',
-            videoUrl: '/content/videos/track-02-final.mp4?v=5',
-            thumbnail: '/content/posters/track-02-crop.jpg?v=2',
-          },
-        ],
-    credits: [
-      { role: 'audio', name: 'track 2 pedal ambient, dark epiphany' },
-      { role: 'image', name: 'track 2 dark mystical epiphany' },
-      { role: 'source', name: 'local content test' },
-    ],
-    meta: {
-      year: '2026',
-      location: 'local',
-      format: 'hardcoded video',
-    },
-  },
-      {
-        id: 'track-03',
-        title: "it is or isn't",
-        scenes: [
-          {
-            id: 'scene-01',
-            videoUrl: '/content/videos/track-03-final.mp4?v=5',
-            thumbnail: '/content/posters/track-03-crop.jpg?v=2',
-          },
-        ],
-    credits: [
-      { role: 'audio', name: "track 3 it is or isn't" },
-      { role: 'image', name: 'track 3 haunting electronic harp' },
-      { role: 'source', name: 'local content test' },
-    ],
-    meta: {
-      year: '2026',
-      location: 'local',
-      format: 'hardcoded video',
-    },
-  },
-      {
-        id: 'track-04',
-        title: 'menial job',
-        scenes: [
-          {
-            id: 'scene-01',
-            videoUrl: '/content/videos/track-04-final.mp4?v=5',
-            thumbnail: '/content/posters/track-04-crop.jpg?v=2',
-          },
-        ],
-    credits: [
-      { role: 'audio', name: 'track 4 menial job bittersweet' },
-      { role: 'image', name: 'track 4 menial job' },
-      { role: 'source', name: 'local content test' },
-    ],
-    meta: {
-      year: '2026',
-      location: 'local',
-      format: 'hardcoded video',
-    },
-  },
-      {
-        id: 'track-05',
-        title: 'birthday',
-        scenes: [
-          {
-            id: 'scene-01',
-            videoUrl: '/content/videos/track-05-final.mp4?v=5',
-            thumbnail: '/content/posters/track-05-crop.png?v=2',
-          },
-        ],
-    credits: [
-      { role: 'audio', name: 'track 5 birthday sweet minimal' },
-      { role: 'image', name: 'track 5 birthday' },
-      { role: 'source', name: 'local content test' },
-    ],
-    meta: {
-      year: '2026',
-      location: 'local',
-      format: 'hardcoded video',
-    },
-  },
-];
-
 ---
 
 <html lang="es">
@@ -122,11 +13,16 @@ const works: Work[] = [
     <title>any</title>
     <meta
       name="description"
-      content="Any uses five local hardcoded test videos in the original Theatre Works layout, ready to be swapped later for Cloudflare or Google Sheets data."
+      content="Any — ambient music archive with video grid, tag search, and contact."
     />
     <style>
+      @import '../components/App.css';
+      @import '../components/AmbientGlow.css';
+      @import '../components/SiteNav.css';
       @import '../components/CreditsPanel.css';
       @import '../components/VUMeter.css';
+      @import '../components/SearchPage.css';
+      @import '../components/ContactPage.css';
     </style>
   </head>
   <body>
@@ -139,7 +35,7 @@ const works: Work[] = [
                 <p>No works found</p>
               </div>
             ) : (
-              <VideoGrid works={works} client:only="react" />
+              <App works={works} client:only="react" />
             )}
           </div>
         </div>

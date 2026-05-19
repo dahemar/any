@@ -23,7 +23,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  padding: 1.75rem 1.875rem calc(11.5rem + 5px);
+  padding: 1.75rem 1.875rem calc(7.5rem + 5px);
   box-sizing: border-box;
 }
 
@@ -66,7 +66,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(11.5rem + 5px);
+  height: calc(7.5rem + 5px);
   background: linear-gradient(to bottom, rgba(42, 42, 42, 0) 0%, rgba(42, 42, 42, 0.92) 34%, rgba(42, 42, 42, 0.995) 56%, rgba(42, 42, 42, 1) 68%, rgba(42, 42, 42, 1) 100%);
   pointer-events: none;
   z-index: 2;
@@ -82,11 +82,36 @@
   margin-bottom: 1.75rem;
 }
 
-.credit-line {
-  margin-bottom: 0.42rem;
-  line-height: 1.375;
+.credits-description {
+  margin: 0 0 1.1rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--any-muted, #6d6d6d);
+  max-width: 20rem;
+}
+
+.credits-tags {
   display: flex;
-  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+}
+
+.credits-tags .tag-pill,
+.credits-tags .credits-tag-pill {
+  font-size: 0.62rem;
+  padding: 0.16rem 0.34rem;
+  line-height: 1.15;
+}
+
+.credits-tag-pill--link {
+  cursor: pointer;
+  font: inherit;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.credits-tag-pill--link:hover {
+  color: var(--any-accent, #7a2131);
+  border-color: rgba(122, 33, 49, 0.35);
 }
 
 .credit-title {
@@ -190,13 +215,12 @@
   color: #121212 !important;
 }
 
-.credit-role,
 .project-nav {
   color: #6d6d6d !important;
 }
 
-.credit-name {
-  color: #121212 !important;
+.credits-description {
+  color: #6d6d6d !important;
 }
 
 .project-nav:hover {
@@ -248,13 +272,13 @@
     margin-bottom: 0.75rem;
   }
 
-  .credit-line {
-    margin-bottom: 0.35rem;
+  .credits-description {
+    font-size: 0.84rem;
+    margin-bottom: 0.75rem;
   }
 
-  .credit-role,
-  .credit-name {
-    font-size: 0.9rem;
+  .credits-tags {
+    gap: 0.22rem;
   }
 
   .credits-project-nav {
