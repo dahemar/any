@@ -4,3 +4,13 @@
   min-height: 100dvh;
   z-index: 1;
 }
+
+@media (max-width: 768px) {
+  .any-app {
+    padding-top: var(--site-nav-mobile-height, 2.35rem);
+  }
+
+  .any-app > :not(.site-nav-minimal):not(.ambient-glow-stack) {
+    min-width: 0;
+  }
+}

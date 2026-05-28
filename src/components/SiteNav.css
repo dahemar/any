@@ -33,15 +33,32 @@
 }
 
 @media (max-width: 768px) {
+  :root {
+    --site-nav-mobile-height: calc(env(safe-area-inset-top, 0px) + 2.35rem);
+  }
+
   .site-nav-minimal {
-    padding: 1rem 1rem 1.1rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 300;
+    margin: 0;
+    padding: calc(env(safe-area-inset-top, 0px) + 0.42rem) 1rem 0.5rem;
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom: 1px solid var(--any-line, rgba(18, 18, 18, 0.1));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
   .site-nav-list {
-    gap: 1.1rem;
+    gap: 1rem;
+    justify-content: flex-start;
+    max-width: 16.5rem;
   }
 
   .site-nav-link {
-    font-size: 0.88rem;
+    font-size: 0.84rem;
+    line-height: 1.15;
   }
 }

@@ -199,24 +199,38 @@
 
 @media (max-width: 768px) {
   .search-page {
-    padding: 0 1rem 2.5rem;
+    padding: 0 0.875rem 2rem;
   }
 
   .search-layout {
     display: block;
   }
 
+  .search-cloud-section {
+    margin-bottom: 1.75rem;
+  }
+
   .tag-word-cloud {
     width: 100%;
-    height: 12rem;
+    height: 11rem;
   }
 
   .search-matches-list {
     grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .search-match-card {
+    padding: 0.5rem;
+    gap: 0.45rem;
   }
 
   .search-matches {
     min-height: 0;
-    padding-top: 0;
+    padding-top: 0.25rem;
+  }
+
+  .search-matches-heading {
+    margin-bottom: 0.65rem;
   }
 }

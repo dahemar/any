@@ -90,6 +90,31 @@
   max-width: 20rem;
 }
 
+.credits-list {
+  margin: 0 0 1.25rem;
+  padding: 0;
+}
+
+.credits-list-row {
+  margin: 0 0 0.85rem;
+}
+
+.credits-list-role {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(24, 19, 16, 0.55);
+  font-weight: 500;
+}
+
+.credits-list-name {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--any-text, #121212);
+}
+
 .credits-tags {
   display: flex;
   flex-wrap: wrap;
@@ -175,8 +200,8 @@
 
   .credits-panel {
     width: 100%;
-    height: min(28dvh, 14rem);
-    min-height: 9rem;
+    height: min(26dvh, 13rem);
+    min-height: 8.5rem;
     top: auto;
     bottom: 0;
     left: 0;
@@ -198,20 +223,26 @@
   }
 
   .credits-scroll-region {
-    padding: 0.85rem 1rem calc(1.75rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.75rem 0.875rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
   }
 
   .credits-bottom-fade {
-    height: 1.75rem;
+    height: 1.35rem;
   }
 
   .credit-title-container {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.55rem;
   }
 
   .credits-description {
-    font-size: 0.84rem;
-    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+    margin-bottom: 0.55rem;
+    line-height: 1.45;
+  }
+
+  .credits-empty-state {
+    font-size: 0.95rem;
+    line-height: 1.4;
   }
 
   .credits-tags {

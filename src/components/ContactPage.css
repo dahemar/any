@@ -17,6 +17,10 @@
 
 @media (max-width: 768px) {
   .contact-page {
-    padding: 0 1rem 2.5rem;
+    padding: 0.15rem 0.875rem 2rem;
+  }
+
+  .contact-email {
+    font-size: 0.86rem;
   }
 }
