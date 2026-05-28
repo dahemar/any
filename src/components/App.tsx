@@ -1,5 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import type { ThumbnailPalette } from '../lib/thumbnailColors';
+import { lazy, Suspense, useCallback, useState } from 'react';
 import type { SiteSection, Work } from '../lib/types';
 import AmbientGlow from './AmbientGlow';
 import SiteNav from './SiteNav';
@@ -17,19 +16,6 @@ export default function App({ works: worksProp }: AppProps) {
   const [section, setSection] = useState<SiteSection>('anyways');
   const [focusWorkId, setFocusWorkId] = useState<string | null>(null);
   const [focusTagId, setFocusTagId] = useState<string | null>(null);
-  const [ambientPalette, setAmbientPalette] = useState<ThumbnailPalette | null>(null);
-  const [ambientActive, setAmbientActive] = useState(false);
-  const [ambientFrozen, setAmbientFrozen] = useState(false);
-
-  const handleAmbientChange = useCallback(
-    (palette: ThumbnailPalette | null, active: boolean, frozen = false) => {
-      setAmbientPalette(palette);
-      setAmbientActive(active);
-      setAmbientFrozen(active && frozen);
-    },
-    []
-  );
-
   const handleSelectWorkFromSearch = useCallback((workId: string) => {
     setFocusWorkId(workId);
     setFocusTagId(null);
@@ -52,17 +38,9 @@ export default function App({ works: worksProp }: AppProps) {
     }
   }, []);
 
-  useEffect(() => {
-    if (section !== 'anyways') {
-      setAmbientPalette(null);
-      setAmbientActive(false);
-      setAmbientFrozen(false);
-    }
-  }, [section]);
-
   return (
     <div className="any-app">
-      <AmbientGlow palette={ambientPalette} active={ambientActive} frozen={ambientFrozen} />
+      {section === 'anyways' ? <AmbientGlow /> : null}
       <SiteNav activeSection={section} onSectionChange={handleSectionChange} />
 
       {section === 'anyways' && (
@@ -70,7 +48,6 @@ export default function App({ works: worksProp }: AppProps) {
           works={worksProp}
           initialWorkId={focusWorkId}
           onInitialWorkApplied={() => setFocusWorkId(null)}
-          onAmbientChange={handleAmbientChange}
           onTagClick={handleOpenSearchTag}
         />
       )}

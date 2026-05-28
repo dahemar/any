@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { extractThumbnailPalette, prefetchThumbnailPalette, type ThumbnailPalette } from '../lib/thumbnailColors';
 import type { Work } from '../lib/types';
 import CreditsPanel from './CreditsPanel';
 import VideoGridCard from './VideoGridCard';
@@ -8,7 +7,6 @@ interface VideoGridProps {
   works: Work[];
   initialWorkId?: string | null;
   onInitialWorkApplied?: () => void;
-  onAmbientChange?: (palette: ThumbnailPalette | null, active: boolean, frozen?: boolean) => void;
   onTagClick?: (tagId: string) => void;
 }
 
@@ -47,7 +45,6 @@ export default function VideoGrid({
   works,
   initialWorkId,
   onInitialWorkApplied,
-  onAmbientChange,
   onTagClick,
 }: VideoGridProps) {
   const items: FlatVideoItem[] = useMemo(
@@ -82,7 +79,6 @@ export default function VideoGrid({
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
   const lastActiveIndexRef = useRef<number | null>(null);
-  const ambientRequestRef = useRef(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -91,12 +87,6 @@ export default function VideoGrid({
     setIsPlaying(true);
     onInitialWorkApplied?.();
   }, [initialWorkId, initialIndex, onInitialWorkApplied]);
-
-  useEffect(() => {
-    return () => {
-      onAmbientChange?.(null, false);
-    };
-  }, [onAmbientChange]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -132,6 +122,12 @@ export default function VideoGrid({
     }
 
     if (activeIndex === null || !isPlaying) {
+      if (activeIndex !== null && !isPlaying) {
+        const pausedVideo = videoRefs.current[activeIndex];
+        if (pausedVideo && !pausedVideo.paused) {
+          pausedVideo.pause();
+        }
+      }
       activeVideoRef.current = null;
       lastActiveIndexRef.current = activeIndex;
       return;
@@ -144,7 +140,9 @@ export default function VideoGrid({
     }
 
     activeVideoRef.current = activeVideo;
-    activeVideo.currentTime = 0;
+    if (previousIndex !== activeIndex) {
+      activeVideo.currentTime = 0;
+    }
     activeVideo.volume = 1;
     activeVideo.muted = false;
 
@@ -192,51 +190,30 @@ export default function VideoGrid({
   const hasFocusState = hoveredIndex !== null || isPlaying;
 
   const handleCardClick = useCallback((index: number) => {
-    setActiveIndex((current) => {
-      if (current === index) {
-        setIsPlaying((prev) => !prev);
-        return current;
+    if (activeIndex === index && isPlaying) {
+      const video = videoRefs.current[index];
+      if (video) {
+        video.pause();
       }
+      setIsPlaying(false);
+      return;
+    }
+
+    if (activeIndex === index) {
       setIsPlaying(true);
-      return index;
-    });
-  }, []);
+      return;
+    }
 
-  const applyAmbientForThumbnail = useCallback(
-    (thumbnail?: string) => {
-      if (!thumbnail || isMobileViewport || !onAmbientChange) return;
-
-      const requestId = ambientRequestRef.current + 1;
-      ambientRequestRef.current = requestId;
-
-      void extractThumbnailPalette(thumbnail).then((palette) => {
-        if (ambientRequestRef.current !== requestId) return;
-        onAmbientChange(palette, true, isPlaying);
-      });
-    },
-    [isMobileViewport, isPlaying, onAmbientChange]
-  );
-
-  useEffect(() => {
-    if (isMobileViewport || !onAmbientChange || activeIndex === null || !isPlaying) return;
-
-    const thumbnail = items[activeIndex]?.thumbnail;
-    if (!thumbnail) return;
-
-    void extractThumbnailPalette(thumbnail).then((palette) => {
-      onAmbientChange(palette, true, true);
-    });
-  }, [activeIndex, isMobileViewport, isPlaying, items, onAmbientChange]);
+    setActiveIndex(index);
+    setIsPlaying(true);
+  }, [activeIndex, isPlaying]);
 
   const handleCardHover = useCallback(
     (index: number) => {
       if (isMobileViewport) return;
-      const thumbnail = items[index]?.thumbnail;
-      if (thumbnail) prefetchThumbnailPalette(thumbnail);
       setHoveredIndex(index);
-      applyAmbientForThumbnail(thumbnail);
     },
-    [applyAmbientForThumbnail, isMobileViewport, items]
+    [isMobileViewport]
   );
 
   const handleGridMouseLeave = useCallback(
@@ -247,36 +224,13 @@ export default function VideoGrid({
       }
 
       setHoveredIndex(null);
-
-      if (isMobileViewport) {
-        onAmbientChange?.(null, false);
-        return;
-      }
-
-      const playingItem = activeIndex !== null ? items[activeIndex] : null;
-      if (isPlaying && playingItem?.thumbnail) {
-        applyAmbientForThumbnail(playingItem.thumbnail);
-        return;
-      }
-
-      onAmbientChange?.(null, false);
     },
-    [activeIndex, applyAmbientForThumbnail, isMobileViewport, isPlaying, items, onAmbientChange]
-  );
-
-  const handleStepNavigation = useCallback(
-    (direction: -1 | 1) => {
-      if (items.length === 0) return;
-      setActiveIndex((current) => {
-        const startIndex = current ?? 0;
-        return (startIndex + direction + items.length) % items.length;
-      });
-      setIsPlaying(true);
-    },
-    [items.length]
+    []
   );
 
   const handlePlaying = useCallback((index: number) => {
+    const video = videoRefs.current[index];
+    if (video?.paused) return;
     setIsPlaying(true);
     setActiveIndex(index);
   }, []);
@@ -316,14 +270,13 @@ export default function VideoGrid({
             key={item.id}
             item={item}
             index={index}
+            workIndex={item.workIndex}
+            sceneIndex={item.sceneIndex}
             isActive={index === activeIndex}
             isCurrentPlaying={index === activeIndex && isPlaying}
             isHovered={hoveredIndex === index}
-            showMobileNav={isMobileViewport && isPanelVisible}
-            canStep={items.length > 1}
             onCardClick={handleCardClick}
             onCardHover={handleCardHover}
-            onStep={handleStepNavigation}
             onPlaying={handlePlaying}
             onPause={handlePause}
             setItemRef={setItemRef}

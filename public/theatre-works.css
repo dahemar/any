@@ -1074,7 +1074,7 @@ body,
 }
 
 .flat-scene-item.playing .flat-scene-poster {
-  opacity: 0 !important;
+  opacity: 0.08 !important;
 }
 
 .flat-scene-caption {

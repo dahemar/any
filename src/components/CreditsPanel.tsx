@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './CreditsPanel.css';
 import VUMeter from './VUMeter';
 
@@ -9,8 +9,6 @@ interface CreditsPanelProps {
   tags?: string[];
   emptyMessage?: string;
   onTagClick?: (tagId: string) => void;
-  onPrevWork?: (() => void) | undefined;
-  onNextWork?: (() => void) | undefined;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
   currentWorkIndex?: number;
   currentSceneIndex?: number;
@@ -23,8 +21,6 @@ export default function CreditsPanel({
   tags = [],
   emptyMessage,
   onTagClick,
-  onPrevWork,
-  onNextWork,
   videoRef,
   currentWorkIndex = 0,
   currentSceneIndex = 0,
@@ -118,26 +114,6 @@ export default function CreditsPanel({
       </div>
 
       <div className="credits-bottom-fade" aria-hidden="true" />
-
-      {(onPrevWork || onNextWork) && (
-        <div className="credits-project-nav">
-          {onPrevWork ? (
-            <button className="project-nav prev" onClick={onPrevWork} aria-label="Previous project">
-              ‹ prev
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {onNextWork ? (
-            <button className="project-nav next" onClick={onNextWork} aria-label="Next project">
-              next ›
-            </button>
-          ) : (
-            <div />
-          )}
-        </div>
-      )}
 
       {!isMobileViewport && (
         <VUMeter

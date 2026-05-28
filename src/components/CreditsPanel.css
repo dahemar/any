@@ -123,65 +123,6 @@
   display: block;
 }
 
-.credits-project-nav {
-  position: absolute;
-  bottom: 2rem;
-  left: 2rem;
-  right: 2rem;
-  display: none;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.project-nav {
-  background: none;
-  border: none;
-  border-radius: 0;
-  padding: 0.5rem 0;
-  font-size: 0.95rem;
-  line-height: 1;
-  height: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  color: #888;
-  cursor: pointer;
-  transition: color 0.3s ease;
-  letter-spacing: -0.01em;
-}
-
-.project-nav:hover {
-  color: #fff;
-  text-decoration: none;
-}
-
-.project-nav.prev {
-  align-self: flex-start;
-}
-
-.project-nav.next {
-  align-self: flex-end;
-}
-
-.credit-role {
-  font-weight: 400;
-  color: #666;
-  font-size: 0.95rem;
-  letter-spacing: -0.01em;
-  flex: 0 0 35%;
-  padding-right: 1rem;
-}
-
-.credit-name {
-  font-weight: 400;
-  color: #cccccc;
-  margin-left: 0;
-  font-size: 0.95rem;
-  letter-spacing: -0.01em;
-  flex: 1;
-}
-
 /* Custom scrollbar for credits */
 .credits-scroll-region::-webkit-scrollbar {
   width: 4px;
@@ -215,16 +156,8 @@
   color: #121212 !important;
 }
 
-.project-nav {
-  color: #6d6d6d !important;
-}
-
 .credits-description {
   color: #6d6d6d !important;
-}
-
-.project-nav:hover {
-  color: #7a2131 !important;
 }
 
 .credits-scroll-region::-webkit-scrollbar-thumb {
@@ -236,6 +169,10 @@
 }
 
 @media (max-width: 768px) {
+  .credits-panel .credits-vumeter {
+    display: none;
+  }
+
   .credits-panel {
     width: 100%;
     height: min(28dvh, 14rem);
@@ -281,11 +218,4 @@
     gap: 0.22rem;
   }
 
-  .credits-project-nav {
-    display: none;
-  }
-
-  .credits-panel .credits-vumeter {
-    display: none;
-  }
 }
