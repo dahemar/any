@@ -1,6 +1,7 @@
 .search-page {
   padding: 0 1.75rem 3rem;
   max-width: none;
+  box-sizing: border-box;
 }
 
 .search-layout {
@@ -69,19 +70,19 @@
 .tag-cloud-word--c8 { color: #8a7a6a; }
 .tag-cloud-word--c9 { color: #6a7a9a; }
 
-/* Narrow range; lg capped at menu size (0.92rem) */
+/* Narrow range; lg capped at menu size */
 .tag-cloud-word--sm {
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   opacity: 0.82;
 }
 
 .tag-cloud-word--md {
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   opacity: 0.9;
 }
 
 .tag-cloud-word--lg {
-  font-size: 0.92rem;
+  font-size: var(--any-type-max, 0.88rem);
   opacity: 1;
 }
 
@@ -177,8 +178,8 @@
 
 .search-match-title {
   color: var(--any-text, #121212);
-  font-size: 0.9rem;
-  line-height: 1.2;
+  font-size: var(--any-type-body, 0.82rem);
+  line-height: 1.25;
 }
 
 .search-match-description {
@@ -194,7 +195,30 @@
 .search-matches-empty {
   margin: 0;
   color: var(--any-muted, #6d6d6d);
-  font-size: 0.88rem;
+  font-size: var(--any-type-body, 0.82rem);
+}
+
+@media (min-width: 769px) {
+  .search-page {
+    padding: 1.5rem 1.75rem 3rem;
+  }
+
+  .search-cloud-section {
+    margin-bottom: 2rem;
+  }
+
+  .search-matches {
+    padding-top: 1.35rem;
+  }
+
+  .search-matches-list {
+    gap: 0.65rem;
+  }
+
+  .search-match-card {
+    gap: 0.48rem;
+    padding: 0.5rem;
+  }
 }
 
 @media (max-width: 768px) {

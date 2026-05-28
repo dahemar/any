@@ -4,7 +4,7 @@
 
 .contact-email {
   font: inherit;
-  font-size: 0.92rem;
+  font-size: var(--any-type-nav, 0.88rem);
   letter-spacing: -0.01em;
   color: var(--any-text, #121212);
   text-decoration: none;
@@ -13,6 +13,12 @@
 
 .contact-email:hover {
   color: var(--any-accent, #7a2131);
+}
+
+@media (min-width: 769px) {
+  .contact-page {
+    padding: 1.5rem 1.75rem 3rem;
+  }
 }
 
 @media (max-width: 768px) {

@@ -953,7 +953,7 @@ body,
 .flat-scene-grid {
   width: 100%;
   min-height: calc(100dvh - var(--site-nav-height, 2.75rem));
-  padding: 0.35rem 1.75rem 1.75rem;
+  padding: 0.5rem 1.75rem 1.85rem;
   box-sizing: border-box;
   transition: padding-right 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1100,8 +1100,8 @@ body,
 .flat-scene-title {
   font-weight: 400;
   font-family: inherit;
-  font-size: 0.82rem;
-  line-height: 1.1;
+  font-size: var(--any-type-body, 0.82rem);
+  line-height: 1.15;
   color: #181310;
 }
 
@@ -1243,6 +1243,20 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
 .video-section.full-width:has(.any-app) .scene-grid.flat-scene-grid {
   height: auto;
   overflow: visible;
+}
+
+@media (min-width: 769px) {
+  .flat-scenes-container {
+    gap: clamp(0.9rem, 1.15vw, 1.15rem);
+  }
+
+  .flat-scene-button {
+    gap: 0.48rem;
+  }
+
+  .flat-scene-caption {
+    gap: 0.58rem;
+  }
 }
 
 @media (max-width: 768px) {
