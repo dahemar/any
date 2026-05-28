@@ -160,11 +160,20 @@ export const allSearchTags: TagDefinition[] = [...moodTags, ...instrumentTags];
 
 const worksByTagCache = new Map<string, Work[]>();
 
+export function getWorksForTags(tagIds: string[]): Work[] {
+  const normalized = tagIds.map((tagId) => tagId.trim()).filter(Boolean);
+  if (normalized.length === 0) return [];
+
+  return works.filter((work) =>
+    normalized.every((tagId) => work.tags?.includes(tagId))
+  );
+}
+
 export function getWorksForTag(tagId: string): Work[] {
   const cached = worksByTagCache.get(tagId);
   if (cached) return cached;
 
-  const matched = works.filter((work) => work.tags?.includes(tagId));
+  const matched = getWorksForTags([tagId]);
   worksByTagCache.set(tagId, matched);
   return matched;
 }

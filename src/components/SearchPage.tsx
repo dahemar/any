@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { allSearchTags, getWorksForTag } from '../data/works';
+import { allSearchTags, getWorksForTag, getWorksForTags } from '../data/works';
 import type { TagDefinition } from '../lib/types';
 import './SearchPage.css';
 
 type CloudSize = 'sm' | 'md' | 'lg';
+type TagCategory = TagDefinition['category'];
+
+interface ActiveTagFilters {
+  mood: string | null;
+  instrument: string | null;
+}
 
 interface CloudTag extends TagDefinition {
   count: number;
@@ -13,6 +19,7 @@ interface CloudTag extends TagDefinition {
 }
 
 const CLOUD_COLOR_COUNT = 10;
+const EMPTY_FILTERS: ActiveTagFilters = { mood: null, instrument: null };
 
 interface SearchPageProps {
   initialTagId?: string | null;
@@ -47,6 +54,10 @@ function buildCloudTags(tags: TagDefinition[]): CloudTag[] {
     .sort((a, b) => b.count - a.count);
 }
 
+function tagLabel(tags: TagDefinition[], tagId: string): string {
+  return tags.find((tag) => tag.id === tagId)?.label ?? tagId;
+}
+
 interface TagWordCloudProps {
   tags: CloudTag[];
   activeTagId: string | null;
@@ -56,11 +67,7 @@ interface TagWordCloudProps {
 
 function TagWordCloud({ tags, activeTagId, onTagClick, ariaLabel }: TagWordCloudProps) {
   return (
-    <div
-      className="tag-word-cloud"
-      role="list"
-      aria-label={ariaLabel}
-    >
+    <div className="tag-word-cloud" role="list" aria-label={ariaLabel}>
       {tags.map((tag) => (
         <button
           key={tag.id}
@@ -82,20 +89,51 @@ export default function SearchPage({
   onInitialTagApplied,
   onSelectWork,
 }: SearchPageProps) {
-  const [activeTagId, setActiveTagId] = useState<string | null>(initialTagId ?? null);
+  const [activeFilters, setActiveFilters] = useState<ActiveTagFilters>(EMPTY_FILTERS);
   const grouped = useMemo(() => groupTags(allSearchTags), []);
   const moodCloud = useMemo(() => buildCloudTags(grouped.mood), [grouped.mood]);
   const instrumentCloud = useMemo(() => buildCloudTags(grouped.instrument), [grouped.instrument]);
-  const matchedWorks = activeTagId ? getWorksForTag(activeTagId) : [];
+
+  const selectedTagIds = useMemo(
+    () => [activeFilters.mood, activeFilters.instrument].filter((id): id is string => Boolean(id)),
+    [activeFilters]
+  );
+
+  const hasActiveFilters = selectedTagIds.length > 0;
+
+  const matchedWorks = useMemo(
+    () => (hasActiveFilters ? getWorksForTags(selectedTagIds) : []),
+    [hasActiveFilters, selectedTagIds]
+  );
+
+  const matchesHeading = useMemo(() => {
+    const parts: string[] = [];
+    if (activeFilters.mood) parts.push(tagLabel(allSearchTags, activeFilters.mood));
+    if (activeFilters.instrument) parts.push(tagLabel(allSearchTags, activeFilters.instrument));
+    return parts.join(' + ');
+  }, [activeFilters]);
 
   useEffect(() => {
     if (!initialTagId) return;
-    setActiveTagId(initialTagId);
+
+    const initialTag = allSearchTags.find((tag) => tag.id === initialTagId);
+    if (initialTag?.category === 'instrument') {
+      setActiveFilters({ mood: null, instrument: initialTagId });
+    } else {
+      setActiveFilters({ mood: initialTagId, instrument: null });
+    }
+
     onInitialTagApplied?.();
   }, [initialTagId, onInitialTagApplied]);
 
-  const handleTagClick = (tagId: string) => {
-    setActiveTagId((current) => (current === tagId ? null : tagId));
+  const handleTagClick = (tagId: string, category: TagCategory) => {
+    setActiveFilters((current) => {
+      const key = category;
+      return {
+        ...current,
+        [key]: current[key] === tagId ? null : tagId,
+      };
+    });
   };
 
   return (
@@ -108,8 +146,8 @@ export default function SearchPage({
             </h2>
             <TagWordCloud
               tags={moodCloud}
-              activeTagId={activeTagId}
-              onTagClick={handleTagClick}
+              activeTagId={activeFilters.mood}
+              onTagClick={(tagId) => handleTagClick(tagId, 'mood')}
               ariaLabel="Mood tags"
             />
           </section>
@@ -120,17 +158,17 @@ export default function SearchPage({
             </h2>
             <TagWordCloud
               tags={instrumentCloud}
-              activeTagId={activeTagId}
-              onTagClick={handleTagClick}
+              activeTagId={activeFilters.instrument}
+              onTagClick={(tagId) => handleTagClick(tagId, 'instrument')}
               ariaLabel="Instrument tags"
             />
           </section>
         </div>
 
-        <section className={`search-matches ${activeTagId ? 'visible' : ''}`} aria-live="polite">
-          {activeTagId ? (
+        <section className={`search-matches ${hasActiveFilters ? 'visible' : ''}`} aria-live="polite">
+          {hasActiveFilters ? (
             <>
-              <h2 className="search-matches-heading">pieces tagged {activeTagId}</h2>
+              <h2 className="search-matches-heading">pieces tagged {matchesHeading}</h2>
               {matchedWorks.length > 0 ? (
                 <ul className="search-matches-list">
                   {matchedWorks.map((work) => {
