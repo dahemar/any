@@ -1,8 +1,21 @@
+:root {
+  /* top + bottom padding + link line box */
+  --site-nav-height: calc(1.15rem + 1.45rem + 1.15em);
+}
+
 .site-nav-minimal {
-  position: relative;
-  z-index: 20;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  margin: 0;
   padding: 1.15rem 1.75rem 1.45rem;
   box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid var(--any-line, rgba(18, 18, 18, 0.1));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .site-nav-list {
@@ -34,21 +47,11 @@
 
 @media (max-width: 768px) {
   :root {
-    --site-nav-mobile-height: calc(env(safe-area-inset-top, 0px) + 2.35rem);
+    --site-nav-height: calc(env(safe-area-inset-top, 0px) + 2.35rem);
   }
 
   .site-nav-minimal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 300;
-    margin: 0;
     padding: calc(env(safe-area-inset-top, 0px) + 0.42rem) 1rem 0.5rem;
-    background: rgba(255, 255, 255, 0.94);
-    border-bottom: 1px solid var(--any-line, rgba(18, 18, 18, 0.1));
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
   }
 
   .site-nav-list {
