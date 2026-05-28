@@ -4,7 +4,7 @@
   min-height: 100dvh;
   z-index: 1;
   box-sizing: border-box;
-  padding-top: var(--site-nav-height);
+  padding-top: var(--site-nav-clearance, calc(var(--site-nav-height) + 0.85rem));
 }
 
 .any-app > :not(.site-nav-minimal):not(.ambient-glow-stack) {

@@ -1,10 +1,10 @@
 .credits-panel {
   position: fixed;
-  top: var(--site-nav-height, 2.75rem);
+  top: var(--site-nav-clearance, calc(var(--site-nav-height, 2.75rem) + 0.85rem));
   right: 0;
   width: 26%;
-  height: calc(100vh - var(--site-nav-height, 2.75rem));
-  height: calc(100dvh - var(--site-nav-height, 2.75rem));
+  height: calc(100vh - var(--site-nav-clearance, 3.6rem));
+  height: calc(100dvh - var(--site-nav-clearance, 3.6rem));
   background-color: rgba(42, 42, 42, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);

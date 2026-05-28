@@ -1,5 +1,6 @@
 :root {
   --site-nav-height: 2.75rem;
+  --site-nav-clearance: calc(var(--site-nav-height) + 0.85rem);
   --any-type-nav: 0.88rem;
   --any-type-max: var(--any-type-nav);
   --any-type-title: var(--any-type-nav);

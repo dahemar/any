@@ -12,6 +12,7 @@
 
 html {
   scrollbar-gutter: auto;
+  scroll-padding-top: var(--site-nav-clearance, calc(var(--site-nav-height, 2.75rem) + 0.85rem));
 }
 
 body {
@@ -1246,6 +1247,23 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
 }
 
 @media (min-width: 769px) {
+  .flat-scene-grid {
+    padding-top: 0.85rem;
+  }
+
+  .flat-scene-item {
+    scroll-margin-top: var(--site-nav-clearance, calc(var(--site-nav-height, 2.75rem) + 0.85rem));
+  }
+
+  .flat-scenes-container.has-focus-state .flat-scene-item.playing {
+    margin-top: 0.4rem;
+  }
+
+  .flat-scene-item.playing .flat-scene-video,
+  .flat-scene-item.playing .flat-scene-poster {
+    transform: translateZ(0) scale(1.02);
+  }
+
   .flat-scenes-container {
     gap: clamp(0.9rem, 1.15vw, 1.15rem);
   }

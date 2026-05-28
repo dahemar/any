@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Work } from '../lib/types';
+import type { Credit, Work } from '../lib/types';
 import CreditsPanel from './CreditsPanel';
 import VideoGridCard from './VideoGridCard';
 
@@ -16,7 +16,9 @@ interface FlatVideoItem {
   title: string;
   description?: string;
   tags: string[];
+  credits?: Credit[];
   src?: string;
+  audioSrc?: string;
   thumbnail?: string;
   workIndex: number;
   sceneIndex: number;
@@ -24,6 +26,13 @@ interface FlatVideoItem {
 
 function getSceneSource(scene?: Work['scenes'][number] | null): string | undefined {
   const src = scene?.proxiedVideoUrl ?? scene?.videoUrl;
+  if (typeof src !== 'string') return undefined;
+  const trimmed = src.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function getSceneAudioSource(scene?: Work['scenes'][number] | null): string | undefined {
+  const src = scene?.audioUrl;
   if (typeof src !== 'string') return undefined;
   const trimmed = src.trim();
   return trimmed.length > 0 ? trimmed : undefined;
@@ -56,7 +65,9 @@ export default function VideoGrid({
           title: work.title,
           description: work.description,
           tags: work.tags ?? [],
+          credits: work.credits,
           src: getSceneSource(scene),
+          audioSrc: getSceneAudioSource(scene),
           thumbnail: scene.thumbnail,
           workIndex,
           sceneIndex,
@@ -169,7 +180,7 @@ export default function VideoGrid({
   }, []);
 
   useEffect(() => {
-    if (!isMobileViewport || activeIndex === null) {
+    if (activeIndex === null) {
       return;
     }
 
@@ -178,12 +189,32 @@ export default function VideoGrid({
       return;
     }
 
-    itemRefs.current[activeItemId]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-      inline: 'nearest',
+    const element = itemRefs.current[activeItemId];
+    if (!element) {
+      return;
+    }
+
+    if (isMobileViewport) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest',
+      });
+      return;
+    }
+
+    if (!isPlaying) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest',
+      });
     });
-  }, [activeIndex, isMobileViewport, items]);
+  }, [activeIndex, isMobileViewport, isPlaying, items]);
 
   const activeItem = activeIndex !== null ? items[activeIndex] : null;
   const isPanelVisible = isMobileViewport ? activeItem !== null : true;
@@ -289,6 +320,7 @@ export default function VideoGrid({
         isVisible={isPanelVisible}
         title={activeItem?.title}
         description={activeItem?.description}
+        credits={activeItem?.credits}
         tags={activeItem?.tags ?? []}
         emptyMessage="click on one of the videos"
         onTagClick={onTagClick}
