@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { allSearchTags, getWorksForTag, getWorksForTags } from '../data/works';
-import type { TagDefinition } from '../lib/types';
+import { getWorksForTag, getWorksForTags } from '../lib/cms/tags';
+import type { TagDefinition, Work } from '../lib/types';
 import './SearchPage.css';
 
 type CloudSize = 'sm' | 'md' | 'lg';
@@ -22,6 +22,8 @@ const CLOUD_COLOR_COUNT = 10;
 const EMPTY_FILTERS: ActiveTagFilters = { mood: null, instrument: null };
 
 interface SearchPageProps {
+  works: Work[];
+  tags: TagDefinition[];
   initialTagId?: string | null;
   onInitialTagApplied?: () => void;
   onSelectWork?: (workId: string) => void;
@@ -34,10 +36,10 @@ function groupTags(tags: TagDefinition[]) {
   };
 }
 
-function buildCloudTags(tags: TagDefinition[]): CloudTag[] {
+function buildCloudTags(tags: TagDefinition[], works: Work[]): CloudTag[] {
   const weighted = tags.map((tag) => ({
     tag,
-    count: Math.max(getWorksForTag(tag.id).length, 1),
+    count: Math.max(getWorksForTag(works, tag.id).length, 1),
   }));
 
   const maxCount = Math.max(...weighted.map((entry) => entry.count), 1);
@@ -85,14 +87,19 @@ function TagWordCloud({ tags, activeTagId, onTagClick, ariaLabel }: TagWordCloud
 }
 
 export default function SearchPage({
+  works,
+  tags,
   initialTagId,
   onInitialTagApplied,
   onSelectWork,
 }: SearchPageProps) {
   const [activeFilters, setActiveFilters] = useState<ActiveTagFilters>(EMPTY_FILTERS);
-  const grouped = useMemo(() => groupTags(allSearchTags), []);
-  const moodCloud = useMemo(() => buildCloudTags(grouped.mood), [grouped.mood]);
-  const instrumentCloud = useMemo(() => buildCloudTags(grouped.instrument), [grouped.instrument]);
+  const grouped = useMemo(() => groupTags(tags), [tags]);
+  const moodCloud = useMemo(() => buildCloudTags(grouped.mood, works), [grouped.mood, works]);
+  const instrumentCloud = useMemo(
+    () => buildCloudTags(grouped.instrument, works),
+    [grouped.instrument, works]
+  );
 
   const selectedTagIds = useMemo(
     () => [activeFilters.mood, activeFilters.instrument].filter((id): id is string => Boolean(id)),
@@ -102,21 +109,21 @@ export default function SearchPage({
   const hasActiveFilters = selectedTagIds.length > 0;
 
   const matchedWorks = useMemo(
-    () => (hasActiveFilters ? getWorksForTags(selectedTagIds) : []),
-    [hasActiveFilters, selectedTagIds]
+    () => (hasActiveFilters ? getWorksForTags(works, selectedTagIds) : []),
+    [hasActiveFilters, selectedTagIds, works]
   );
 
   const matchesHeading = useMemo(() => {
     const parts: string[] = [];
-    if (activeFilters.mood) parts.push(tagLabel(allSearchTags, activeFilters.mood));
-    if (activeFilters.instrument) parts.push(tagLabel(allSearchTags, activeFilters.instrument));
+    if (activeFilters.mood) parts.push(tagLabel(tags, activeFilters.mood));
+    if (activeFilters.instrument) parts.push(tagLabel(tags, activeFilters.instrument));
     return parts.join(' + ');
-  }, [activeFilters]);
+  }, [activeFilters, tags]);
 
   useEffect(() => {
     if (!initialTagId) return;
 
-    const initialTag = allSearchTags.find((tag) => tag.id === initialTagId);
+    const initialTag = tags.find((tag) => tag.id === initialTagId);
     if (initialTag?.category === 'instrument') {
       setActiveFilters({ mood: null, instrument: initialTagId });
     } else {
@@ -124,7 +131,7 @@ export default function SearchPage({
     }
 
     onInitialTagApplied?.();
-  }, [initialTagId, onInitialTagApplied]);
+  }, [initialTagId, onInitialTagApplied, tags]);
 
   const handleTagClick = (tagId: string, category: TagCategory) => {
     setActiveFilters((current) => {

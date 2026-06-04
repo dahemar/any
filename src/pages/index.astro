@@ -1,8 +1,11 @@
 ---
 import App from '../components/App';
-import { works } from '../data/works';
+import { loadSiteCms } from '../lib/cms/loadWorks';
 
 export const prerender = false;
+
+const cms = await loadSiteCms();
+const { works, tags } = cms;
 ---
 
 <html lang="es">
@@ -15,15 +18,6 @@ export const prerender = false;
       name="description"
       content="Any — ambient music archive with video grid, tag search, and contact."
     />
-    <style>
-      @import '../components/App.css';
-      @import '../components/AmbientGlow.css';
-      @import '../components/SiteNav.css';
-      @import '../components/CreditsPanel.css';
-      @import '../components/VUMeter.css';
-      @import '../components/SearchPage.css';
-      @import '../components/ContactPage.css';
-    </style>
   </head>
   <body>
     <div class="theatre-works">
@@ -35,7 +29,7 @@ export const prerender = false;
                 <p>No works found</p>
               </div>
             ) : (
-              <App works={works} client:only="react" />
+              <App works={works} tags={tags} client:only="react" />
             )}
           </div>
         </div>

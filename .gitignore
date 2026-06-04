@@ -1,27 +1,8 @@
-# Build outputs
-dist/
-.vercel/
-.astro/
-
-# Dependencies
 node_modules/
-package-lock.json
-
-# Environment
+dist/
+.astro/
+.vercel/
 .env
-.env.local
-.env.*.local
-
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Logs
-*.log
-npm-debug.log*
+.env.*
+!.env.example
+.cache/

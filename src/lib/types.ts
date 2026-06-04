@@ -8,7 +8,13 @@ export interface Scene {
   videoUrl: string;
   proxiedVideoUrl?: string;
   thumbnail?: string;
+  audioUrl?: string;
   duration?: number;
+}
+
+export interface WorksStats {
+  totalWorks: number;
+  totalVideos: number;
 }
 
 export interface Work {
@@ -20,11 +26,6 @@ export interface Work {
   credits?: Credit[];
   meta?: Record<string, string>;
   isMusic?: boolean;
-}
-
-export interface WorksStats {
-  totalWorks: number;
-  totalVideos: number;
 }
 
 export type SiteSection = 'anyways' | 'search' | 'contact';

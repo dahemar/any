@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Credit } from '../lib/types';
 import './CreditsPanel.css';
 import VUMeter from './VUMeter';
 
@@ -6,6 +7,7 @@ interface CreditsPanelProps {
   isVisible: boolean;
   title?: string;
   description?: string;
+  credits?: Credit[];
   tags?: string[];
   emptyMessage?: string;
   onTagClick?: (tagId: string) => void;
@@ -18,6 +20,7 @@ export default function CreditsPanel({
   isVisible,
   title,
   description,
+  credits = [],
   tags = [],
   emptyMessage,
   onTagClick,
@@ -58,7 +61,7 @@ export default function CreditsPanel({
       scrollRegion.removeEventListener('scroll', handlePanelScroll);
       window.removeEventListener('resize', handleViewportChange);
     };
-  }, [isVisible, description, tags, title, updateBottomFade]);
+  }, [isVisible, credits, description, tags, title, updateBottomFade]);
 
   if (!isVisible) {
     return null;
@@ -88,6 +91,17 @@ export default function CreditsPanel({
           ) : null}
 
           {description ? <p className="credits-description">{description}</p> : null}
+
+          {credits.length > 0 ? (
+            <dl className="credits-list">
+              {credits.map((credit, index) => (
+                <div key={`${credit.role}-${index}`} className="credits-list-row">
+                  <dt className="credits-list-role">{credit.role}</dt>
+                  {credit.name ? <dd className="credits-list-name">{credit.name}</dd> : null}
+                </div>
+              ))}
+            </dl>
+          ) : null}
 
           {tags.length > 0 ? (
             <div className="credits-tags" role="list" aria-label="Tags">

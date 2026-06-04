@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useState } from 'react';
-import type { SiteSection, Work } from '../lib/types';
+import type { SiteSection, TagDefinition, Work } from '../lib/types';
 import AmbientGlow from './AmbientGlow';
 import SiteNav from './SiteNav';
 import VideoGrid from './VideoGrid';
@@ -10,9 +10,10 @@ const ContactPage = lazy(() => import('./ContactPage'));
 
 interface AppProps {
   works: Work[];
+  tags: TagDefinition[];
 }
 
-export default function App({ works: worksProp }: AppProps) {
+export default function App({ works: worksProp, tags }: AppProps) {
   const [section, setSection] = useState<SiteSection>('anyways');
   const [focusWorkId, setFocusWorkId] = useState<string | null>(null);
   const [focusTagId, setFocusTagId] = useState<string | null>(null);
@@ -55,6 +56,8 @@ export default function App({ works: worksProp }: AppProps) {
       {section === 'search' && (
         <Suspense fallback={null}>
           <SearchPage
+            works={worksProp}
+            tags={tags}
             initialTagId={focusTagId}
             onInitialTagApplied={() => setFocusTagId(null)}
             onSelectWork={handleSelectWorkFromSearch}
