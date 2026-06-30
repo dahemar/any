@@ -4,12 +4,6 @@ import type { TagDefinition, Work } from '../lib/types';
 import './SearchPage.css';
 
 type CloudSize = 'sm' | 'md' | 'lg';
-type TagCategory = TagDefinition['category'];
-
-interface ActiveTagFilters {
-  mood: string | null;
-  instrument: string | null;
-}
 
 interface CloudTag extends TagDefinition {
   count: number;
@@ -19,7 +13,6 @@ interface CloudTag extends TagDefinition {
 }
 
 const CLOUD_COLOR_COUNT = 10;
-const EMPTY_FILTERS: ActiveTagFilters = { mood: null, instrument: null };
 
 interface SearchPageProps {
   works: Work[];
@@ -62,12 +55,12 @@ function tagLabel(tags: TagDefinition[], tagId: string): string {
 
 interface TagWordCloudProps {
   tags: CloudTag[];
-  activeTagId: string | null;
+  activeTagIds: Set<string>;
   onTagClick: (tagId: string) => void;
   ariaLabel: string;
 }
 
-function TagWordCloud({ tags, activeTagId, onTagClick, ariaLabel }: TagWordCloudProps) {
+function TagWordCloud({ tags, activeTagIds, onTagClick, ariaLabel }: TagWordCloudProps) {
   return (
     <div className="tag-word-cloud" role="list" aria-label={ariaLabel}>
       {tags.map((tag) => (
@@ -75,9 +68,9 @@ function TagWordCloud({ tags, activeTagId, onTagClick, ariaLabel }: TagWordCloud
           key={tag.id}
           type="button"
           role="listitem"
-          className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--p${tag.position % 18} tag-cloud-word--c${tag.colorIndex} ${activeTagId === tag.id ? 'active' : ''}`}
+          className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--p${tag.position % 18} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
           onClick={() => onTagClick(tag.id)}
-          aria-pressed={activeTagId === tag.id}
+          aria-pressed={activeTagIds.has(tag.id)}
         >
           {tag.label}
         </button>
@@ -93,7 +86,7 @@ export default function SearchPage({
   onInitialTagApplied,
   onSelectWork,
 }: SearchPageProps) {
-  const [activeFilters, setActiveFilters] = useState<ActiveTagFilters>(EMPTY_FILTERS);
+  const [activeTagIds, setActiveTagIds] = useState<Set<string>>(new Set());
   const grouped = useMemo(() => groupTags(tags), [tags]);
   const moodCloud = useMemo(() => buildCloudTags(grouped.mood, works), [grouped.mood, works]);
   const instrumentCloud = useMemo(
@@ -102,8 +95,8 @@ export default function SearchPage({
   );
 
   const selectedTagIds = useMemo(
-    () => [activeFilters.mood, activeFilters.instrument].filter((id): id is string => Boolean(id)),
-    [activeFilters]
+    () => Array.from(activeTagIds),
+    [activeTagIds]
   );
 
   const hasActiveFilters = selectedTagIds.length > 0;
@@ -113,33 +106,35 @@ export default function SearchPage({
     [hasActiveFilters, selectedTagIds, works]
   );
 
-  const matchesHeading = useMemo(() => {
-    const parts: string[] = [];
-    if (activeFilters.mood) parts.push(tagLabel(tags, activeFilters.mood));
-    if (activeFilters.instrument) parts.push(tagLabel(tags, activeFilters.instrument));
-    return parts.join(' + ');
-  }, [activeFilters, tags]);
-
   useEffect(() => {
     if (!initialTagId) return;
 
-    const initialTag = tags.find((tag) => tag.id === initialTagId);
-    if (initialTag?.category === 'instrument') {
-      setActiveFilters({ mood: null, instrument: initialTagId });
-    } else {
-      setActiveFilters({ mood: initialTagId, instrument: null });
-    }
+    setActiveTagIds((current) => {
+      const next = new Set(current);
+      next.add(initialTagId);
+      return next;
+    });
 
     onInitialTagApplied?.();
-  }, [initialTagId, onInitialTagApplied, tags]);
+  }, [initialTagId, onInitialTagApplied]);
 
-  const handleTagClick = (tagId: string, category: TagCategory) => {
-    setActiveFilters((current) => {
-      const key = category;
-      return {
-        ...current,
-        [key]: current[key] === tagId ? null : tagId,
-      };
+  const handleTagClick = (tagId: string) => {
+    setActiveTagIds((current) => {
+      const next = new Set(current);
+      if (next.has(tagId)) {
+        next.delete(tagId);
+      } else {
+        next.add(tagId);
+      }
+      return next;
+    });
+  };
+
+  const handleRemoveTag = (tagId: string) => {
+    setActiveTagIds((current) => {
+      const next = new Set(current);
+      next.delete(tagId);
+      return next;
     });
   };
 
@@ -153,8 +148,8 @@ export default function SearchPage({
             </h2>
             <TagWordCloud
               tags={moodCloud}
-              activeTagId={activeFilters.mood}
-              onTagClick={(tagId) => handleTagClick(tagId, 'mood')}
+              activeTagIds={activeTagIds}
+              onTagClick={handleTagClick}
               ariaLabel="Mood tags"
             />
           </section>
@@ -165,8 +160,8 @@ export default function SearchPage({
             </h2>
             <TagWordCloud
               tags={instrumentCloud}
-              activeTagId={activeFilters.instrument}
-              onTagClick={(tagId) => handleTagClick(tagId, 'instrument')}
+              activeTagIds={activeTagIds}
+              onTagClick={handleTagClick}
               ariaLabel="Instrument tags"
             />
           </section>
@@ -175,7 +170,22 @@ export default function SearchPage({
         <section className={`search-matches ${hasActiveFilters ? 'visible' : ''}`} aria-live="polite">
           {hasActiveFilters ? (
             <>
-              <h2 className="search-matches-heading">pieces tagged {matchesHeading}</h2>
+              <h2 className="search-matches-heading">pieces tagged</h2>
+              <div className="search-active-filters" role="list" aria-label="Active filters">
+                {selectedTagIds.map((tagId) => (
+                  <span key={tagId} className="filter-pill" role="listitem">
+                    <span className="filter-pill-label">{tagLabel(tags, tagId)}</span>
+                    <button
+                      type="button"
+                      className="filter-pill-remove"
+                      onClick={() => handleRemoveTag(tagId)}
+                      aria-label={`Remove ${tagLabel(tags, tagId)}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
               {matchedWorks.length > 0 ? (
                 <ul className="search-matches-list">
                   {matchedWorks.map((work) => {

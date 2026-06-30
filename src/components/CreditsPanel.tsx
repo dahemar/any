@@ -14,6 +14,7 @@ interface CreditsPanelProps {
   videoRef?: React.RefObject<HTMLVideoElement | null>;
   currentWorkIndex?: number;
   currentSceneIndex?: number;
+  onClose?: () => void;
 }
 
 export default function CreditsPanel({
@@ -27,6 +28,7 @@ export default function CreditsPanel({
   videoRef,
   currentWorkIndex = 0,
   currentSceneIndex = 0,
+  onClose,
 }: CreditsPanelProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const scrollRegionRef = useRef<HTMLDivElement | null>(null);
@@ -80,6 +82,16 @@ export default function CreditsPanel({
       className={`credits-panel visible ${showBottomFade ? 'show-bottom-fade' : ''}`}
       onWheel={handleWheel}
     >
+      {onClose && isMobileViewport ? (
+        <button
+          type="button"
+          className="credits-close-button"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          ×
+        </button>
+      ) : null}
       <div ref={scrollRegionRef} className="credits-scroll-region">
         <div className="credits-content">
           {title ? (

@@ -46,9 +46,7 @@ function VideoGridCard({
     if (!audio || !item.audioSrc) return;
 
     if (isActive && isCurrentPlaying) {
-      void audio.play().catch(() => {
-        // autoplay policies or missing CORS — ignore
-      });
+      void audio.play().catch(() => {});
       return;
     }
 

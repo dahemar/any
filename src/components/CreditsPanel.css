@@ -1,10 +1,10 @@
 .credits-panel {
   position: fixed;
-  top: var(--site-nav-clearance, calc(var(--site-nav-height, 2.75rem) + 0.85rem));
+  top: var(--site-nav-height, 2.75rem);
   right: 0;
   width: 26%;
-  height: calc(100vh - var(--site-nav-clearance, 3.6rem));
-  height: calc(100dvh - var(--site-nav-clearance, 3.6rem));
+  height: calc(100vh - var(--site-nav-height, 2.75rem));
+  height: calc(100dvh - var(--site-nav-height, 2.75rem));
   background-color: rgba(42, 42, 42, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -123,9 +123,11 @@
 
 .credits-tags .tag-pill,
 .credits-tags .credits-tag-pill {
-  font-size: 0.62rem;
-  padding: 0.16rem 0.34rem;
-  line-height: 1.15;
+  font: inherit;
+  font-size: var(--any-type-caption, 0.68rem);
+  padding: 0.22rem 0.45rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .credits-tag-pill--link {
@@ -225,7 +227,7 @@
     transform: translateY(100%);
     border-radius: 0;
     box-shadow: 0 -10px 30px rgba(18, 18, 18, 0.08);
-    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), height 0.55s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .credits-panel.visible {
@@ -262,5 +264,22 @@
   .credits-tags {
     gap: 0.22rem;
   }
+
+  .credits-close-button {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    z-index: 10;
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0.15rem;
+    font: inherit;
+    font-size: 1.15rem;
+    line-height: 0.7;
+    color: var(--any-muted, #6d6d6d);
+    cursor: pointer;
+  }
+}
 
 }

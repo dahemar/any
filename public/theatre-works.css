@@ -870,8 +870,7 @@ body,
 .scene-item video,
 .mobile-item .mobile-video,
 .scene-item .desktop-poster-overlay {
-  opacity: 0.96;
-  mix-blend-mode: multiply;
+  opacity: 1;
 }
 
 .flat-scene-item {
@@ -1019,6 +1018,7 @@ body,
   aspect-ratio: 16 / 10;
   overflow: hidden;
   line-height: 0;
+  background: var(--any-bg-soft, #f7f3ed);
 }
 
 .flat-scene-media::after {
@@ -1031,8 +1031,6 @@ body,
   transition: box-shadow 800ms ease;
 }
 
-/* Show maroon inset only when actually playing or on hover; remove for mere "active" state */
-.flat-scene-item.playing .flat-scene-media::after,
 .flat-scene-item:hover .flat-scene-media::after {
   box-shadow: inset 0 0 0 1px rgba(122, 33, 49, 0.45);
 }
@@ -1047,7 +1045,7 @@ body,
   height: 100%;
   object-fit: cover;
   object-position: center center;
-  transform: translateZ(0) scale(1.035);
+  transform: translateZ(0);
   transform-origin: center center;
 }
 
@@ -1063,7 +1061,7 @@ body,
   height: 100%;
   object-fit: cover;
   object-position: center center;
-  transform: translateZ(0) scale(1.035);
+  transform: translateZ(0);
   transition: opacity 220ms ease;
   z-index: 8;
 }
@@ -1255,13 +1253,9 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
     scroll-margin-top: var(--site-nav-clearance, calc(var(--site-nav-height, 2.75rem) + 0.85rem));
   }
 
-  .flat-scenes-container.has-focus-state .flat-scene-item.playing {
-    margin-top: 0.4rem;
-  }
-
   .flat-scene-item.playing .flat-scene-video,
   .flat-scene-item.playing .flat-scene-poster {
-    transform: translateZ(0) scale(1.02);
+    transform: translateZ(0);
   }
 
   .flat-scenes-container {
@@ -1324,6 +1318,10 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
     gap: 0.55rem;
   }
 
+  .flat-scene-item.playing .flat-scene-caption {
+    display: none;
+  }
+
   .flat-scene-index {
     font-size: 0.72rem;
   }
@@ -1379,5 +1377,24 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
   .flat-scene-item {
     opacity: 1 !important;
     filter: none !important;
+  }
+}
+
+/* Taller credits panel on mobile when playing */
+@media (max-width: 768px) {
+  .flat-scene-grid.mobile-playing.panel-open {
+    padding-bottom: calc(min(52dvh, 28rem) + 0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .flat-scene-grid.mobile-playing .credits-panel {
+    height: min(52dvh, 28rem);
+    min-height: 16rem;
+  }
+
+  .flat-scene-grid.mobile-playing .flat-scene-item:not(.playing) {
+    visibility: hidden;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
   }
 }

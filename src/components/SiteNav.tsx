@@ -7,7 +7,7 @@ interface SiteNavProps {
 }
 
 const sections: { id: SiteSection; label: string }[] = [
-  { id: 'anyways', label: 'anyways' },
+  { id: 'anyway', label: 'anyway' },
   { id: 'search', label: 'search' },
   { id: 'contact', label: 'contact' },
 ];

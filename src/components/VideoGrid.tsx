@@ -91,6 +91,13 @@ export default function VideoGrid({
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
   const lastActiveIndexRef = useRef<number | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const closingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (initialWorkId == null || initialIndex < 0) return;
@@ -276,6 +283,17 @@ export default function VideoGrid({
     []
   );
 
+  const handleStopMobile = useCallback(() => {
+    const video = activeIndex !== null ? videoRefs.current[activeIndex] : null;
+    if (video) pauseVideo(video);
+    setIsPlaying(false);
+    setHoveredIndex(null);
+    if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
+    closingTimerRef.current = setTimeout(() => {
+      setActiveIndex(null);
+    }, 600);
+  }, [activeIndex]);
+
   const setItemRef = useCallback((id: string, element: HTMLDivElement | null) => {
     itemRefs.current[id] = element;
   }, []);
@@ -288,8 +306,10 @@ export default function VideoGrid({
     return <div className="video-grid-empty">No videos found.</div>;
   }
 
+  const isMobilePlaying = isMobileViewport && activeIndex !== null && isPlaying;
+
   return (
-    <div className={`scene-grid flat-scene-grid ${isPanelVisible ? 'panel-open' : ''}`}>
+    <div className={`scene-grid flat-scene-grid ${isPanelVisible ? 'panel-open' : ''} ${isMobilePlaying ? 'mobile-playing' : ''}`}>
       <div
         className={`flat-scenes-container ${hasFocusState ? 'has-focus-state' : ''}`}
         role="list"
@@ -327,6 +347,7 @@ export default function VideoGrid({
         videoRef={activeVideoRef}
         currentWorkIndex={activeItem?.workIndex ?? 0}
         currentSceneIndex={activeItem?.sceneIndex ?? 0}
+        onClose={isMobilePlaying ? handleStopMobile : undefined}
       />
     </div>
   );

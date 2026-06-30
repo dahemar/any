@@ -28,7 +28,7 @@ export interface Work {
   isMusic?: boolean;
 }
 
-export type SiteSection = 'anyways' | 'search' | 'contact';
+export type SiteSection = 'anyway' | 'search' | 'contact';
 
 export interface TagDefinition {
   id: string;

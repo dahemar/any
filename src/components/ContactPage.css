@@ -2,6 +2,13 @@
   padding: 0 1.75rem 3rem;
 }
 
+.contact-intro {
+  margin: 0 0 0.35rem;
+  font: inherit;
+  font-size: var(--any-type-body, 0.82rem);
+  color: var(--any-muted, #6d6d6d);
+}
+
 .contact-email {
   font: inherit;
   font-size: var(--any-type-nav, 0.88rem);
