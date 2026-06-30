@@ -1031,10 +1031,6 @@ body,
   transition: box-shadow 800ms ease;
 }
 
-.flat-scene-item:hover .flat-scene-media::after {
-  box-shadow: inset 0 0 0 1px rgba(122, 33, 49, 0.45);
-}
-
 .flat-scene-media video,
 .flat-scene-video,
 .flat-scene-item.active .flat-scene-video,
