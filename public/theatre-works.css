@@ -1065,12 +1065,14 @@ body,
   transform: translateZ(0);
   transition: opacity 220ms ease;
   z-index: 8;
+  background: var(--any-bg-soft, #f7f3ed);
 }
 
 .flat-scene-video {
   opacity: 0;
   transition: opacity 220ms ease;
   z-index: 10;
+  background: var(--any-bg-soft, #f7f3ed);
 }
 
 .flat-scene-item.playing .flat-scene-video {

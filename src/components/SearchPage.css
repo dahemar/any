@@ -209,6 +209,7 @@
   aspect-ratio: 16 / 10;
   object-fit: cover;
   display: block;
+  background: var(--any-bg-soft, #f7f3ed);
 }
 
 .search-match-copy {
