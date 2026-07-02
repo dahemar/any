@@ -1,3 +1,3 @@
-work_id,role,name,order,active
-pedal-ambient-soft,composition,any,1,yes
-pedal-ambient-soft,production,,2,yes
+title,role,name,active
+"pedal ambient, soft",composition,any,yes
+"pedal ambient, soft",production,,yes

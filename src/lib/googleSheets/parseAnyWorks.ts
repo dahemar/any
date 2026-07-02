@@ -96,11 +96,15 @@ export function parseCmsFromFlatSheets(
   const tagRecords = rowsToRecords(tagsValues);
 
   const creditsByWork = new Map<string, Array<Credit & { order: number }>>();
+  let creditIndex = 0;
   for (const row of creditRecords) {
-    const workId = getField(row, 'work_id', 'id', 'work');
+    creditIndex++;
+    const workTitle = getField(row, 'title', 'name');
+    const explicitId = getField(row, 'work_id', 'id', 'work');
+    const workId = explicitId || (workTitle ? slugify(workTitle) : '');
     const role = getField(row, 'role');
     const name = getField(row, 'name', 'person');
-    const order = Number(getField(row, 'order', 'sort') || 0) || 0;
+    const order = Number(getField(row, 'order', 'sort')) || creditIndex;
     if (!workId || !role) continue;
     if (!isActiveValue(getField(row, 'active', 'visible', 'published'))) continue;
 
