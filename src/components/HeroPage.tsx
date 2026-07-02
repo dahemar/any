@@ -238,12 +238,11 @@ export default function HeroPage() {
   }, [updateScrollProgress]);
 
   const blurPx = scrollProgress * MAX_BLUR;
-  const isHidden = scrollProgress >= 1;
+  const opacity = Math.max(0, 1 - scrollProgress);
   const style: React.CSSProperties = {
-    opacity: isHidden ? 0 : Math.max(0, 1 - scrollProgress * 1.2),
+    opacity,
     backdropFilter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
     WebkitBackdropFilter: blurPx > 0 ? `blur(${blurPx}px)` : undefined,
-    pointerEvents: isHidden ? 'none' : undefined,
   };
 
   return (
