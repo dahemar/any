@@ -420,19 +420,22 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
     } as React.CSSProperties;
   }
 
+  const waveformW = inCreditsPanel ? 255 : 170;
+  const waveformH = inCreditsPanel ? 108 : 72;
+
   const waveformCanvasStyle: React.CSSProperties = {
     display: 'block',
     background: 'transparent',
-    width: '170px',
-    height: '72px',
-    minWidth: '170px',
-    minHeight: '72px',
+    width: `${waveformW}px`,
+    height: `${waveformH}px`,
+    minWidth: `${waveformW}px`,
+    minHeight: `${waveformH}px`,
     flexShrink: 0,
   };
 
   const meterNode = (
     <div className={`vumeter-container ${inCreditsPanel ? 'in-credits-panel' : ''}`} style={containerStyle}>
-      <canvas ref={waveformRef} className="waveform-canvas" width="170" height="72" style={waveformCanvasStyle} />
+      <canvas ref={waveformRef} className="waveform-canvas" width={waveformW} height={waveformH} style={waveformCanvasStyle} />
     </div>
   );
 

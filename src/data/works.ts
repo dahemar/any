@@ -1,5 +1,7 @@
 import type { TagDefinition, Work } from '../lib/types';
 
+const R2 = 'https://pub-ab92f061862e4c32b9117317c7b77334.r2.dev';
+
 export const works: Work[] = [
   {
     id: 'track-01',
@@ -10,7 +12,8 @@ export const works: Work[] = [
       {
         id: 'scene-01',
         videoUrl: '/content/videos/track-01-final.mp4?v=5',
-        thumbnail: '/content/posters/track-01-crop.jpg?v=2',
+        thumbnail: `${R2}/posters/track-01-crop.jpg`,
+        audioUrl: `${R2}/audio/track-1-pedal-ambient-soft.mp3`,
       },
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },
@@ -24,7 +27,8 @@ export const works: Work[] = [
       {
         id: 'scene-01',
         videoUrl: '/content/videos/track-02-final.mp4?v=5',
-        thumbnail: '/content/posters/track-02-crop.jpg?v=2',
+        thumbnail: `${R2}/posters/track-02-crop.jpg`,
+        audioUrl: `${R2}/audio/track-2---pedal-ambient-dark-epiphany.mp3`,
       },
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },
@@ -38,7 +42,8 @@ export const works: Work[] = [
       {
         id: 'scene-01',
         videoUrl: '/content/videos/track-03-final.mp4?v=5',
-        thumbnail: '/content/posters/track-03-crop.jpg?v=2',
+        thumbnail: `${R2}/posters/track-03-crop.jpg`,
+        audioUrl: `${R2}/audio/track-3-it-is-or-isnt-instrumental--haunting-electronic-harp.wav`,
       },
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },
@@ -52,7 +57,8 @@ export const works: Work[] = [
       {
         id: 'scene-01',
         videoUrl: '/content/videos/track-04-final.mp4?v=5',
-        thumbnail: '/content/posters/track-04-crop.jpg?v=2',
+        thumbnail: `${R2}/posters/track-04-crop.jpg`,
+        audioUrl: `${R2}/audio/track-4---menial-job---bittersweet.wav`,
       },
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },
@@ -66,7 +72,8 @@ export const works: Work[] = [
       {
         id: 'scene-01',
         videoUrl: '/content/videos/track-05-final.mp4?v=5',
-        thumbnail: '/content/posters/track-05-crop.png?v=2',
+        thumbnail: `${R2}/posters/track-05-crop.png`,
+        audioUrl: `${R2}/audio/track-5-birthday---sweet-minimal-.mp3`,
       },
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },
@@ -80,7 +87,8 @@ export const works: Work[] = [
       {
         id: 'scene-01',
         videoUrl: '/content/videos/track-06-final.mp4?v=1',
-        thumbnail: '/content/posters/track-06-crop.jpg?v=1',
+        thumbnail: `${R2}/posters/track-06-crop.jpg`,
+        audioUrl: `${R2}/audio/track-6-any-x-zodanos-lyra.wav`,
       },
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },
@@ -94,7 +102,8 @@ export const works: Work[] = [
       {
         id: 'scene-01',
         videoUrl: '/content/videos/track-07-final.mp4?v=1',
-        thumbnail: '/content/posters/track-07-crop.jpg?v=1',
+        thumbnail: `${R2}/posters/track-07-crop.jpg`,
+        audioUrl: `${R2}/audio/track-7-atmanic.mp3`,
       },
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },
@@ -108,7 +117,8 @@ export const works: Work[] = [
       {
         id: 'scene-01',
         videoUrl: '/content/videos/track-08-final.mp4?v=1',
-        thumbnail: '/content/posters/track-08-crop.jpg?v=1',
+        thumbnail: `${R2}/posters/track-08-crop.jpg`,
+        audioUrl: `${R2}/audio/track-8-formless.mp3`,
       },
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },
@@ -122,7 +132,8 @@ export const works: Work[] = [
       {
         id: 'scene-01',
         videoUrl: '/content/videos/track-09-final.mp4?v=1',
-        thumbnail: '/content/posters/track-09-crop.jpg?v=1',
+        thumbnail: `${R2}/posters/track-09-crop.jpg`,
+        audioUrl: `${R2}/audio/track-9-higher-than-love.mp3`,
       },
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },

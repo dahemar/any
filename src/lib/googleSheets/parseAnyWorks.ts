@@ -27,8 +27,8 @@ function rowsToRecords(values: string[][]): Record<string, string>[] {
       record[key] = String(row[i] ?? '').trim();
     }
 
-    const id = record.id || record.work_id || record.work_slug || record.slug;
-    if (!id && !record.role && !record.category) continue;
+    const hasTitle = record.title || record.name;
+    if (!record.id && !hasTitle && !record.role && !record.category) continue;
 
     records.push(record);
   }
@@ -64,6 +64,22 @@ function normalizeAssetUrl(value: string): string {
     return trimmed;
   }
   return `/${trimmed.replace(/^\./, '')}`;
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/['']/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function deriveId(record: Record<string, string>): string {
+  const explicit = getField(record, 'id', 'work_id', 'work_slug', 'slug');
+  if (explicit) return explicit;
+  const title = getField(record, 'title', 'name');
+  return title ? slugify(title) : '';
 }
 
 function sortByOrder<T extends { order?: number }>(items: T[]): T[] {
@@ -105,8 +121,10 @@ export function parseCmsFromFlatSheets(
   }
 
   const works: Work[] = [];
+  let rowIndex = 0;
   for (const row of workRecords) {
-    const id = getField(row, 'id', 'work_id', 'work_slug', 'slug');
+    rowIndex++;
+    const id = deriveId(row);
     if (!id) continue;
     if (!isActiveValue(getField(row, 'active', 'visible', 'published'))) continue;
 
@@ -118,11 +136,14 @@ export function parseCmsFromFlatSheets(
       getField(row, 'thumbnail_url', 'thumbnail', 'poster_url', 'poster', 'cover_url')
     );
     const audioUrl = normalizeAssetUrl(getField(row, 'audio_url', 'mp3_url', 'audio', 'mp3'));
+    const order = Number(getField(row, 'order', 'sort')) || rowIndex;
 
     const meta: Record<string, string> = {};
     for (const [key, value] of Object.entries(row)) {
       if (value) meta[key] = value;
     }
+    meta.order = String(order);
+    meta.row = String(rowIndex);
 
     const credits = sortByOrder(creditsByWork.get(id) ?? []).map(({ role, name }) => ({ role, name }));
 

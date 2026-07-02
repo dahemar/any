@@ -7,8 +7,7 @@ import { parseCmsFromFlatSheets, type ParsedCmsData } from './parseAnyWorks';
 const CACHE_PATH = path.resolve(process.cwd(), '.cache/any-cms.json');
 const IS_VERCEL_RUNTIME = Boolean(process.env.VERCEL);
 
-const OLD_R2_PUBLIC_HOST = 'pub-16fb774f4ada4a69b6c70bc856201eeb.r2.dev';
-const NEW_R2_PUBLIC_HOST = 'pub-f04cf0f8494f457e889559aa0b6e57b7.r2.dev';
+const R2_PUBLIC_HOST = 'pub-ab92f061862e4c32b9117317c7b77334.r2.dev';
 
 const memoryCache = new Map<string, ParsedCmsData>();
 const CACHE_KEY = 'anyCms';
@@ -21,8 +20,8 @@ function rewriteR2PublicUrl(url: string): string {
   if (!url) return url;
   try {
     const parsed = new URL(url);
-    if (parsed.hostname === OLD_R2_PUBLIC_HOST) {
-      parsed.hostname = NEW_R2_PUBLIC_HOST;
+    if (parsed.hostname.endsWith('.r2.dev')) {
+      parsed.hostname = R2_PUBLIC_HOST;
       parsed.protocol = 'https:';
       return parsed.toString();
     }
