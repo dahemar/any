@@ -5,7 +5,7 @@ import { loadSiteCms } from '../lib/cms/loadWorks';
 export const prerender = false;
 
 const cms = await loadSiteCms();
-const { works, tags } = cms;
+const { works, tags, intro } = cms;
 ---
 
 <html lang="es">
@@ -29,7 +29,7 @@ const { works, tags } = cms;
                 <p>No works found</p>
               </div>
             ) : (
-              <App works={works} tags={tags} client:only="react" />
+              <App works={works} tags={tags} intro={intro} client:only="react" />
             )}
           </div>
         </div>

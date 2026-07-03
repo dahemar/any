@@ -16,6 +16,8 @@ export const googleSheetsConfig = {
   creditsRange:
     trim(import.meta.env.GOOGLE_SHEETS_CREDITS_RANGE ?? process.env.GOOGLE_SHEETS_CREDITS_RANGE) || 'credits',
   tagsRange: trim(import.meta.env.GOOGLE_SHEETS_TAGS_RANGE ?? process.env.GOOGLE_SHEETS_TAGS_RANGE) || 'tags',
+  introRange:
+    trim(import.meta.env.GOOGLE_SHEETS_INTRO_RANGE ?? process.env.GOOGLE_SHEETS_INTRO_RANGE) || 'intro',
 };
 
 export function isGoogleSheetsConfigured(): boolean {

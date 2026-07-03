@@ -1,13 +1,23 @@
 import { works as fallbackWorks } from '../../data/works';
 import type { TagDefinition, Work, WorksStats } from '../types';
 import { loadCmsData } from '../googleSheets/googleSheetsManager';
+import type { ParsedIntro } from '../googleSheets/parseAnyWorks';
 import { mergeTagDefinitions } from './tags';
 
 export interface SiteCmsData {
   works: Work[];
   tags: TagDefinition[];
+  intro?: ParsedIntro;
   source: 'sheets' | 'fallback';
 }
+
+const fallbackIntro: ParsedIntro = {
+  title: 'sound library',
+  description: [
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+  ],
+};
 
 export async function loadSiteCms(options?: { force?: boolean }): Promise<SiteCmsData> {
   const remote = await loadCmsData(options);
@@ -16,6 +26,7 @@ export async function loadSiteCms(options?: { force?: boolean }): Promise<SiteCm
     return {
       works: remote.works,
       tags: mergeTagDefinitions(remote.tags, remote.works),
+      intro: remote.intro || fallbackIntro,
       source: 'sheets',
     };
   }
@@ -23,6 +34,7 @@ export async function loadSiteCms(options?: { force?: boolean }): Promise<SiteCm
   return {
     works: fallbackWorks,
     tags: mergeTagDefinitions([], fallbackWorks),
+    intro: fallbackIntro,
     source: 'fallback',
   };
 }

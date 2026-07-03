@@ -37,6 +37,16 @@ const html = `<!DOCTYPE html>
   <code>docs.google.com/spreadsheets/d/1aMXXwMw9riTdR04_ykHXajCeHc9sGOzZSzPmPrFQWSc</code>
 </div>
 
+<h2>intro</h2>
+<p>Controls the hero section text at the top of the page.</p>
+
+<table>
+<tr><th>Column</th><th>What to put</th></tr>
+<tr><td><code>title</code></td><td>Main heading. Required.</td></tr>
+<tr><td><code>description</code></td><td>Body text. Use <code>||</code> to separate paragraphs.</td></tr>
+<tr><td><code>active</code></td><td><code>yes</code> = visible. <code>no</code> = hidden.</td></tr>
+</table>
+
 <h2>works</h2>
 <p>Each row is one track.</p>
 

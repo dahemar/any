@@ -3,6 +3,12 @@ import type { Credit, TagDefinition, Work } from '../types';
 export interface ParsedCmsData {
   works: Work[];
   tags: TagDefinition[];
+  intro?: ParsedIntro;
+}
+
+export interface ParsedIntro {
+  title: string;
+  description: string[];
 }
 
 const normalizeKey = (value: unknown) =>
@@ -89,7 +95,8 @@ function sortByOrder<T extends { order?: number }>(items: T[]): T[] {
 export function parseCmsFromFlatSheets(
   worksValues: string[][],
   creditsValues: string[][],
-  tagsValues: string[][]
+  tagsValues: string[][],
+  introValues?: string[][]
 ): ParsedCmsData {
   const workRecords = rowsToRecords(worksValues);
   const creditRecords = rowsToRecords(creditsValues);
@@ -122,6 +129,19 @@ export function parseCmsFromFlatSheets(
     const categoryRaw = getField(row, 'category', 'type') || 'mood';
     const category = categoryRaw === 'instrument' ? 'instrument' : 'mood';
     tags.push({ id, label: id, category });
+  }
+
+  let intro: ParsedCmsData['intro'] = undefined;
+  const introRecords = introValues ? rowsToRecords(introValues) : [];
+  if (introRecords.length > 0) {
+    const firstRow = introRecords[0];
+    if (isActiveValue(getField(firstRow, 'active', 'visible', 'published'))) {
+      const rawDesc = getField(firstRow, 'description', 'text');
+      intro = {
+        title: getField(firstRow, 'title', 'name') || 'sound library',
+        description: rawDesc ? rawDesc.split(/\s*\|\|\s*/).filter(Boolean) : [],
+      };
+    }
   }
 
   const works: Work[] = [];
@@ -179,5 +199,5 @@ export function parseCmsFromFlatSheets(
     return a.title.localeCompare(b.title);
   });
 
-  return { works, tags };
+  return { works, tags, intro };
 }

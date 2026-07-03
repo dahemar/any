@@ -17,7 +17,7 @@ const importDir = path.resolve(__dirname, '../data/sheets-import');
 
 const DEFAULT_SPREADSHEET_ID = '1aMXXwMw9riTdR04_ykHXajCeHc9sGOzZSzPmPrFQWSc';
 const spreadsheetId = (process.argv[2] || DEFAULT_SPREADSHEET_ID).trim();
-const TAB_NAMES = ['works', 'credits', 'tags'];
+const TAB_NAMES = ['intro', 'works', 'credits', 'tags'];
 
 const CREDENTIAL_CANDIDATES = [
   process.env.GOOGLE_APPLICATION_CREDENTIALS,

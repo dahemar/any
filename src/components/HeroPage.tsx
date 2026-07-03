@@ -1,32 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './HeroPage.css';
+import type { ParsedIntro } from '../lib/googleSheets/parseAnyWorks';
 
 const POINTS = 128;
 const MAX_BLUR = 6;
 
-function generateSimulatedData(phase: number): { waveform: number[]; frequencies: number[] } {
-  const waveform: number[] = [];
-  const frequencies: number[] = [];
+const defaultIntro: ParsedIntro = {
+  title: 'sound library',
+  description: [
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+  ],
+};
 
-  for (let i = 0; i < POINTS; i++) {
-    const envelope = Math.pow(Math.sin((Math.PI * i) / (POINTS - 1)), 2.5);
-    const w =
-      Math.sin(phase + i * 0.18) * 0.55 +
-      Math.sin(phase * 1.6 + i * 0.09) * 0.35 +
-      Math.sin(phase * 0.55 + i * 0.04) * 0.25 +
-      Math.sin(phase * 2.1 + i * 0.26) * 0.18;
-    waveform.push(w * envelope);
-    const f =
-      Math.sin(phase * 0.8 + i * 0.03) * 0.5 +
-      Math.sin(phase * 1.2 + i * 0.12) * 0.3 +
-      0.5;
-    frequencies.push(Math.abs(f) * envelope * 0.7);
-  }
-
-  return { waveform, frequencies };
-}
-
-export default function HeroPage() {
+export default function HeroPage({ intro = defaultIntro }: { intro?: ParsedIntro }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLElement>(null);
   const phaseRef = useRef(0);
@@ -250,13 +237,10 @@ export default function HeroPage() {
       <div className="hero-wave-container">
         <canvas ref={canvasRef} className="hero-wave-canvas" aria-hidden="true" />
       </div>
-      <h2 className="hero-title">sound library</h2>
-      <p className="hero-description">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-      </p>
-      <p className="hero-description">
-        Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-      </p>
+      <h2 className="hero-title">{intro.title}</h2>
+      {intro.description.map((paragraph, i) => (
+        <p key={i} className="hero-description">{paragraph}</p>
+      ))}
     </section>
   );
 }

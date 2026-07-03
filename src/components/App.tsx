@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useState } from 'react';
 import type { SiteSection, TagDefinition, Work } from '../lib/types';
+import type { ParsedIntro } from '../lib/googleSheets/parseAnyWorks';
 import AmbientGlow from './AmbientGlow';
 import HeroPage from './HeroPage';
 import SiteNav from './SiteNav';
@@ -12,9 +13,10 @@ const ContactPage = lazy(() => import('./ContactPage'));
 interface AppProps {
   works: Work[];
   tags: TagDefinition[];
+  intro?: ParsedIntro;
 }
 
-export default function App({ works: worksProp, tags }: AppProps) {
+export default function App({ works: worksProp, tags, intro }: AppProps) {
   const [section, setSection] = useState<SiteSection>('anyway');
   const [focusWorkId, setFocusWorkId] = useState<string | null>(null);
   const [focusTagId, setFocusTagId] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export default function App({ works: worksProp, tags }: AppProps) {
 
       {section === 'anyway' && (
         <>
-          <HeroPage />
+          <HeroPage intro={intro} />
           <VideoGrid
             works={worksProp}
             initialWorkId={focusWorkId}

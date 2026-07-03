@@ -231,9 +231,10 @@ export async function fetchFromGoogleSheets(): Promise<ParsedCmsData> {
     googleSheetsConfig.worksRange,
     googleSheetsConfig.creditsRange,
     googleSheetsConfig.tagsRange,
+    googleSheetsConfig.introRange,
   ];
 
-  let [worksRows, creditsRows, tagsRows] = await batchFetchSheetValues(tabNames);
+  let [worksRows, creditsRows, tagsRows, introRows] = await batchFetchSheetValues(tabNames);
 
   if (!worksRows.length) {
     worksRows = await fetchGvizSheetAsRows(googleSheetsConfig.worksRange);
@@ -244,11 +245,15 @@ export async function fetchFromGoogleSheets(): Promise<ParsedCmsData> {
   if (!tagsRows.length) {
     tagsRows = await fetchGvizSheetAsRows(googleSheetsConfig.tagsRange);
   }
+  if (!introRows.length) {
+    introRows = await fetchGvizSheetAsRows(googleSheetsConfig.introRange);
+  }
 
-  const parsed = parseCmsFromFlatSheets(worksRows, creditsRows, tagsRows);
+  const parsed = parseCmsFromFlatSheets(worksRows, creditsRows, tagsRows, introRows);
   const normalized: ParsedCmsData = {
     works: normalizeWorksForDelivery(parsed.works),
     tags: parsed.tags,
+    intro: parsed.intro,
   };
 
   if (normalized.works.length > 0) {
@@ -284,6 +289,7 @@ export async function loadCmsData(options?: { force?: boolean }): Promise<Parsed
       return {
         works: normalizeWorksForDelivery(cached.works),
         tags: cached.tags,
+        intro: cached.intro,
       };
     }
   }
