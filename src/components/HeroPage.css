@@ -6,6 +6,7 @@
   padding: 1.5rem 1.75rem 3.5rem;
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0);
+  pointer-events: none;
   transition: opacity 0.35s ease-out, backdrop-filter 0.35s ease-out, -webkit-backdrop-filter 0.35s ease-out;
 }
 

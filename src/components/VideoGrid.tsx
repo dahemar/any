@@ -93,11 +93,29 @@ export default function VideoGrid({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const closingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const activeItem = activeIndex !== null ? items[activeIndex] : null;
+  const isPanelVisible = isMobileViewport ? activeItem !== null : true;
+
   useEffect(() => {
     return () => {
       if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport) return;
+    if (isPanelVisible) {
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    };
+  }, [isMobileViewport, isPanelVisible]);
 
   useEffect(() => {
     if (initialWorkId == null || initialIndex < 0) return;
@@ -203,7 +221,7 @@ export default function VideoGrid({
 
     if (isMobileViewport) {
       element.scrollIntoView({
-        behavior: 'smooth',
+        behavior: 'instant',
         block: 'start',
         inline: 'nearest',
       });
@@ -223,8 +241,6 @@ export default function VideoGrid({
     });
   }, [activeIndex, isMobileViewport, isPlaying, items]);
 
-  const activeItem = activeIndex !== null ? items[activeIndex] : null;
-  const isPanelVisible = isMobileViewport ? activeItem !== null : true;
   const hasFocusState = hoveredIndex !== null || isPlaying;
 
   const handleCardClick = useCallback((index: number) => {
@@ -291,7 +307,7 @@ export default function VideoGrid({
     if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
     closingTimerRef.current = setTimeout(() => {
       setActiveIndex(null);
-    }, 600);
+    }, 250);
   }, [activeIndex]);
 
   const setItemRef = useCallback((id: string, element: HTMLDivElement | null) => {
