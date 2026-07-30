@@ -63,7 +63,7 @@ export default function CreditsPanel({
       scrollRegion.removeEventListener('scroll', handlePanelScroll);
       window.removeEventListener('resize', handleViewportChange);
     };
-  }, [isVisible, credits, description, tags, title, updateBottomFade]);
+  }, [isVisible, updateBottomFade]);
 
   if (!isVisible) {
     return null;

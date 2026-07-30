@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { getWorksForTag, getWorksForTags } from '../lib/cms/tags';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { slugifyTagId } from '../lib/cms/tags';
 import type { TagDefinition, Work } from '../lib/types';
 import './SearchPage.css';
 
 type CloudSize = 'sm' | 'md' | 'lg';
+
+type NormalizedWork = {
+  work: Work;
+  normalizedTagIds: Set<string>;
+};
 
 interface CloudTag extends TagDefinition {
   count: number;
@@ -23,16 +28,20 @@ interface SearchPageProps {
 }
 
 function groupTags(tags: TagDefinition[]) {
-  return {
-    mood: tags.filter((tag) => tag.category === 'mood'),
-    instrument: tags.filter((tag) => tag.category === 'instrument'),
-  };
+  return tags.reduce(
+    (acc, tag) => {
+      if (tag.category === 'instrument') acc.instrument.push(tag);
+      else acc.mood.push(tag);
+      return acc;
+    },
+    { mood: [] as TagDefinition[], instrument: [] as TagDefinition[] }
+  );
 }
 
-function buildCloudTags(tags: TagDefinition[], works: Work[]): CloudTag[] {
+function buildCloudTags(tags: TagDefinition[], tagCounts: Map<string, number>): CloudTag[] {
   const weighted = tags.map((tag) => ({
     tag,
-    count: Math.max(getWorksForTag(works, tag.id).length, 1),
+    count: Math.max(tagCounts.get(tag.id) ?? 0, 1),
   }));
 
   const maxCount = Math.max(...weighted.map((entry) => entry.count), 1);
@@ -49,8 +58,8 @@ function buildCloudTags(tags: TagDefinition[], works: Work[]): CloudTag[] {
     .sort((a, b) => b.count - a.count);
 }
 
-function tagLabel(tags: TagDefinition[], tagId: string): string {
-  return tags.find((tag) => tag.id === tagId)?.label ?? tagId;
+function tagLabel(labelMap: Map<string, string>, tagId: string): string {
+  return labelMap.get(tagId) ?? tagId;
 }
 
 interface TagWordCloudProps {
@@ -60,7 +69,7 @@ interface TagWordCloudProps {
   ariaLabel: string;
 }
 
-function TagWordCloud({ tags, activeTagIds, onTagClick, ariaLabel }: TagWordCloudProps) {
+const TagWordCloud = memo(function TagWordCloud({ tags, activeTagIds, onTagClick, ariaLabel }: TagWordCloudProps) {
   return (
     <div className="tag-word-cloud" role="list" aria-label={ariaLabel}>
       {tags.map((tag) => (
@@ -77,7 +86,7 @@ function TagWordCloud({ tags, activeTagIds, onTagClick, ariaLabel }: TagWordClou
       ))}
     </div>
   );
-}
+});
 
 export default function SearchPage({
   works,
@@ -87,23 +96,51 @@ export default function SearchPage({
   onSelectWork,
 }: SearchPageProps) {
   const [activeTagIds, setActiveTagIds] = useState<Set<string>>(new Set());
+
+  const worksWithNormalizedTags = useMemo<NormalizedWork[]>(
+    () =>
+      works.map((work) => ({
+        work,
+        normalizedTagIds: new Set(
+          (work.tags ?? []).map(slugifyTagId).filter((tagId) => tagId.length > 0)
+        ),
+      })),
+    [works]
+  );
+
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const entry of worksWithNormalizedTags) {
+      for (const tagId of entry.normalizedTagIds) {
+        counts.set(tagId, (counts.get(tagId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [worksWithNormalizedTags]);
+
   const grouped = useMemo(() => groupTags(tags), [tags]);
-  const moodCloud = useMemo(() => buildCloudTags(grouped.mood, works), [grouped.mood, works]);
+  const moodCloud = useMemo(() => buildCloudTags(grouped.mood, tagCounts), [grouped.mood, tagCounts]);
   const instrumentCloud = useMemo(
-    () => buildCloudTags(grouped.instrument, works),
-    [grouped.instrument, works]
+    () => buildCloudTags(grouped.instrument, tagCounts),
+    [grouped.instrument, tagCounts]
   );
 
-  const selectedTagIds = useMemo(
-    () => Array.from(activeTagIds),
-    [activeTagIds]
+  const tagLabelMap = useMemo(
+    () => new Map(tags.map((tag) => [tag.id, tag.label])),
+    [tags]
   );
 
-  const hasActiveFilters = selectedTagIds.length > 0;
+  const selectedTagIds = useMemo(() => Array.from(activeTagIds), [activeTagIds]);
+  const hasActiveFilters = activeTagIds.size > 0;
 
   const matchedWorks = useMemo(
-    () => (hasActiveFilters ? getWorksForTags(works, selectedTagIds) : []),
-    [hasActiveFilters, selectedTagIds, works]
+    () =>
+      hasActiveFilters
+        ? worksWithNormalizedTags
+            .filter(({ normalizedTagIds }) => selectedTagIds.every((tagId) => normalizedTagIds.has(tagId)))
+            .map(({ work }) => work)
+        : [],
+    [hasActiveFilters, selectedTagIds, worksWithNormalizedTags]
   );
 
   useEffect(() => {
@@ -118,7 +155,7 @@ export default function SearchPage({
     onInitialTagApplied?.();
   }, [initialTagId, onInitialTagApplied]);
 
-  const handleTagClick = (tagId: string) => {
+  const handleTagClick = useCallback((tagId: string) => {
     setActiveTagIds((current) => {
       const next = new Set(current);
       if (next.has(tagId)) {
@@ -128,15 +165,15 @@ export default function SearchPage({
       }
       return next;
     });
-  };
+  }, []);
 
-  const handleRemoveTag = (tagId: string) => {
+  const handleRemoveTag = useCallback((tagId: string) => {
     setActiveTagIds((current) => {
       const next = new Set(current);
       next.delete(tagId);
       return next;
     });
-  };
+  }, []);
 
   return (
     <div className="search-page">
@@ -174,12 +211,12 @@ export default function SearchPage({
               <div className="search-active-filters" role="list" aria-label="Active filters">
                 {selectedTagIds.map((tagId) => (
                   <span key={tagId} className="filter-pill" role="listitem">
-                    <span className="filter-pill-label">{tagLabel(tags, tagId)}</span>
+                    <span className="filter-pill-label">{tagLabel(tagLabelMap, tagId)}</span>
                     <button
                       type="button"
                       className="filter-pill-remove"
                       onClick={() => handleRemoveTag(tagId)}
-                      aria-label={`Remove ${tagLabel(tags, tagId)}`}
+                      aria-label={`Remove ${tagLabel(tagLabelMap, tagId)}`}
                     >
                       ×
                     </button>

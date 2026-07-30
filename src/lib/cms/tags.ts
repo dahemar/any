@@ -3,7 +3,7 @@ import type { TagDefinition, Work } from '../types';
 
 const FALLBACK_TAGS: TagDefinition[] = [...moodTags, ...instrumentTags];
 
-function slugifyTagId(value: string): string {
+export function slugifyTagId(value: string): string {
   return value
     .trim()
     .toLowerCase()

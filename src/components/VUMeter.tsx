@@ -113,17 +113,10 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
   const lastDrawRef = useRef(0);
   const silentFramesRef = useRef(0);
 
-  const findPlayingVideo = () => {
-    const videos = Array.from(document.querySelectorAll('video')) as HTMLVideoElement[];
-    return videos.find(video => !video.paused && !video.ended && video.currentTime > 0) || null;
-  };
-
-  const ensureConnectedToPlayingVideo = () => {
-    const targetVideo = videoRef?.current ?? findPlayingVideo();
-    if (targetVideo && targetVideo !== lastActiveVideoRef.current) {
-      lastActiveVideoRef.current = targetVideo;
-      connectMediaToAnalyser(targetVideo);
-    }
+  const connectTargetVideo = (mediaElement: HTMLMediaElement | null) => {
+    if (!mediaElement || mediaElement === lastActiveVideoRef.current) return;
+    lastActiveVideoRef.current = mediaElement;
+    connectMediaToAnalyser(mediaElement);
   };
 
   const getAudioData = () => {
@@ -313,17 +306,16 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
       if (!isMountedRef.current || document.hidden) return;
       if (time - lastDrawRef.current < 40) return;
 
-      const playingVideo = videoRef?.current ?? findPlayingVideo();
+      const playingVideo = resolvePlayingVideo();
       if (!playingVideo || playingVideo.paused) {
         silentFramesRef.current += 1;
         if (silentFramesRef.current > 2) return;
       } else {
         silentFramesRef.current = 0;
+        connectTargetVideo(playingVideo);
       }
 
       lastDrawRef.current = time;
-      ensureConnectedToPlayingVideo();
-
       const { waveform, frequencies } = getAudioData();
       drawWaveform(waveform, frequencies);
     };
