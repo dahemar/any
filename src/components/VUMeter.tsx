@@ -96,16 +96,17 @@ const connectMediaToAnalyser = (mediaElement: HTMLMediaElement | null) => {
 
 interface VUMeterProps {
   videoRef?: React.RefObject<HTMLVideoElement | null>;
+  audioRef?: React.RefObject<HTMLAudioElement | null>;
   currentWorkIndex: number;
   currentSceneIndex: number;
   inCreditsPanel?: boolean;
 }
 
-export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex, inCreditsPanel = false }: VUMeterProps) {
+export default function VUMeter({ videoRef, audioRef, currentWorkIndex, currentSceneIndex, inCreditsPanel = false }: VUMeterProps) {
   const waveformRef = useRef<HTMLCanvasElement>(null);
   const intervalRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
-  const lastActiveVideoRef = useRef<HTMLVideoElement | null>(null);
+  const lastActiveMediaRef = useRef<HTMLMediaElement | null>(null);
   const freqBufferRef = useRef<Uint8Array | null>(null);
   const waveBufferRef = useRef<Uint8Array | null>(null);
   const freqScratchRef = useRef<number[]>([]);
@@ -113,20 +114,49 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
   const lastDrawRef = useRef(0);
   const silentFramesRef = useRef(0);
 
-  const resolvePlayingVideo = () => {
-    if (videoRef?.current) return videoRef.current;
-    const videos = Array.from(document.querySelectorAll('video')) as HTMLVideoElement[];
-    return videos.find(video => !video.paused && !video.ended && video.currentTime > 0) || null;
+  const resolvePlayingMedia = () => {
+    if (audioRef?.current && !audioRef.current.paused && !audioRef.current.ended && audioRef.current.currentTime > 0) {
+      return audioRef.current;
+    }
+    if (videoRef?.current && !videoRef.current.paused && !videoRef.current.ended && videoRef.current.currentTime > 0) {
+      return videoRef.current;
+    }
+    const medias = Array.from(document.querySelectorAll('audio, video')) as HTMLMediaElement[];
+    return medias.find(media => !media.paused && !media.ended && media.currentTime > 0) || null;
   };
 
-  const connectTargetVideo = (mediaElement: HTMLMediaElement | null) => {
-    if (!mediaElement || mediaElement === lastActiveVideoRef.current) return;
-    lastActiveVideoRef.current = mediaElement;
+  const connectTargetMedia = (mediaElement: HTMLMediaElement | null) => {
+    if (!mediaElement || mediaElement === lastActiveMediaRef.current) return;
+    lastActiveMediaRef.current = mediaElement;
     connectMediaToAnalyser(mediaElement);
   };
 
+  const getFallbackAudioData = () => {
+    const bufferLength = 128;
+    if (!freqScratchRef.current || freqScratchRef.current.length !== bufferLength) {
+      freqScratchRef.current = new Array(bufferLength);
+      waveScratchRef.current = new Array(bufferLength);
+    }
+
+    const frequencies = freqScratchRef.current;
+    const waveform = waveScratchRef.current;
+    const time = performance.now() / 1000;
+    const base = Math.sin(time * 1.5) * 0.25 + 0.55;
+    for (let i = 0; i < bufferLength; i += 1) {
+      const phase = (i / bufferLength) * Math.PI * 2;
+      frequencies[i] = Math.max(0.04, base * (0.25 + 0.5 * Math.sin(phase + time * 1.2)));
+      waveform[i] = Math.sin(phase * 2 + time * 3.5) * 0.45 * frequencies[i];
+    }
+
+    return { waveform, frequencies };
+  };
+
   const getAudioData = () => {
-    if (!GLOBAL_ANALYSER) return { waveform: waveScratchRef.current, frequencies: freqScratchRef.current };
+    const media = lastActiveMediaRef.current;
+    const isConnected = media && ((media as any)._audioNode || (media as any)._webAudioSource);
+    if (!GLOBAL_ANALYSER || !isConnected) {
+      return getFallbackAudioData();
+    }
 
     try {
       const bufferLength = GLOBAL_ANALYSER.frequencyBinCount;
@@ -151,7 +181,7 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
 
       return { waveform, frequencies };
     } catch {
-      return { waveform: waveScratchRef.current, frequencies: freqScratchRef.current };
+      return getFallbackAudioData();
     }
   };
 
@@ -312,13 +342,13 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
       if (!isMountedRef.current || document.hidden) return;
       if (time - lastDrawRef.current < 40) return;
 
-      const playingVideo = resolvePlayingVideo();
-      if (!playingVideo || playingVideo.paused) {
+      const playingMedia = resolvePlayingMedia();
+      if (!playingMedia || playingMedia.paused) {
         silentFramesRef.current += 1;
         if (silentFramesRef.current > 2) return;
       } else {
         silentFramesRef.current = 0;
-        connectTargetVideo(playingVideo);
+        connectTargetMedia(playingMedia);
       }
 
       lastDrawRef.current = time;
@@ -334,14 +364,15 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
         cancelAnimationFrame(intervalRef.current);
       }
     };
-  }, [videoRef]);
+  }, [audioRef, videoRef]);
 
   // Connect and reconnect video element to analyser when it changes
   useEffect(() => {
-    const getActiveVideo = () => {
+    const getActiveMedia = () => {
+      if (audioRef?.current) return audioRef.current;
       if (videoRef?.current) return videoRef.current;
-      const selector = `[data-work-index="${currentWorkIndex}"][data-scene-index="${currentSceneIndex}"] video`;
-      return document.querySelector(selector) as HTMLVideoElement | null;
+      const selector = `[data-work-index="${currentWorkIndex}"][data-scene-index="${currentSceneIndex}"] audio, [data-work-index="${currentWorkIndex}"][data-scene-index="${currentSceneIndex}"] video`;
+      return document.querySelector(selector) as HTMLMediaElement | null;
     };
 
     const ensureAudioContext = () => {
@@ -352,44 +383,44 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
       }
     };
 
-    const connectActiveVideo = () => {
-      const activeVideo = getActiveVideo();
-      if (!activeVideo) return;
+    const connectActiveMedia = () => {
+      const activeMedia = getActiveMedia();
+      if (!activeMedia) return;
       ensureAudioContext();
-      connectMediaToAnalyser(activeVideo);
+      connectMediaToAnalyser(activeMedia);
     };
 
     const handlePlay = (event: Event) => {
-      const target = event.target as HTMLVideoElement | null;
-      if (target && target.tagName === 'VIDEO') {
+      const target = event.target as HTMLMediaElement | null;
+      if (target && (target.tagName === 'VIDEO' || target.tagName === 'AUDIO')) {
         ensureAudioContext();
         connectMediaToAnalyser(target);
       }
     };
 
-    const activeVideo = getActiveVideo();
-    const handleLoadedMetadata = () => connectActiveVideo();
-    const handleCanPlay = () => connectActiveVideo();
+    const activeMedia = getActiveMedia();
+    const handleLoadedMetadata = () => connectActiveMedia();
+    const handleCanPlay = () => connectActiveMedia();
 
-    if (activeVideo) {
-      activeVideo.addEventListener('loadedmetadata', handleLoadedMetadata);
-      activeVideo.addEventListener('canplay', handleCanPlay);
+    if (activeMedia) {
+      activeMedia.addEventListener('loadedmetadata', handleLoadedMetadata);
+      activeMedia.addEventListener('canplay', handleCanPlay);
     }
 
     document.addEventListener('play', handlePlay, true);
 
-    if (activeVideo && activeVideo.readyState >= 1) {
-      connectActiveVideo();
+    if (activeMedia && activeMedia.readyState >= 1) {
+      connectActiveMedia();
     }
 
     return () => {
       document.removeEventListener('play', handlePlay, true);
-      if (activeVideo) {
-        activeVideo.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        activeVideo.removeEventListener('canplay', handleCanPlay);
+      if (activeMedia) {
+        activeMedia.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        activeMedia.removeEventListener('canplay', handleCanPlay);
       }
     };
-  }, [videoRef, currentWorkIndex, currentSceneIndex]);
+  }, [audioRef, videoRef, currentWorkIndex, currentSceneIndex]);
 
   if (typeof document === 'undefined') return null;
 

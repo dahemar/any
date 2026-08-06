@@ -9,11 +9,22 @@ const IS_VERCEL_RUNTIME = Boolean(process.env.VERCEL);
 
 const R2_PUBLIC_HOST = 'pub-ab92f061862e4c32b9117317c7b77334.r2.dev';
 
-const memoryCache = new Map<string, ParsedCmsData>();
+const memoryCache = new Map<string, { data: ParsedCmsData; storedAt: number }>();
 const CACHE_KEY = 'anyCms';
+const CACHE_TTL_MS = 30_000;
 
 export function clearMemoryCache(): void {
   memoryCache.delete(CACHE_KEY);
+}
+
+function getFreshMemoryCache(): ParsedCmsData | null {
+  const entry = memoryCache.get(CACHE_KEY);
+  if (!entry) return null;
+  if (Date.now() - entry.storedAt > CACHE_TTL_MS) {
+    memoryCache.delete(CACHE_KEY);
+    return null;
+  }
+  return entry.data.works.length > 0 ? entry.data : null;
 }
 
 function rewriteR2PublicUrl(url: string): string {
@@ -33,33 +44,35 @@ function rewriteR2PublicUrl(url: string): string {
 
 function rewritePossiblyProxiedUrl(url: string): string {
   if (!url || typeof url !== 'string') return url;
-  if (!url.startsWith('/api/proxy/')) return rewriteR2PublicUrl(url);
+  if (url.startsWith('/api/proxy')) return url;
 
-  const encoded = url.slice('/api/proxy/'.length);
   try {
-    const decoded = decodeURIComponent(encoded);
-    const rewritten = rewriteR2PublicUrl(decoded);
-    if (rewritten.startsWith('http://') || rewritten.startsWith('https://')) return rewritten;
+    const parsed = new URL(url);
+    const rewritten = rewriteR2PublicUrl(url);
+    if (shouldProxyHost(parsed.hostname)) {
+      return `/api/proxy?url=${encodeURIComponent(rewritten)}`;
+    }
+    return rewritten;
   } catch {
     return url;
   }
-  return url;
 }
 
 function shouldProxyHost(hostname: string): boolean {
   return (
     ['github.com', 'release-assets.githubusercontent.com'].includes(hostname) ||
-    hostname.endsWith('.s3.amazonaws.com')
+    hostname.endsWith('.s3.amazonaws.com') ||
+    hostname.endsWith('.r2.dev')
   );
 }
 
 function buildProxiedUrl(videoUrl: string): string | undefined {
-  if (IS_VERCEL_RUNTIME || !videoUrl) return undefined;
-  if (videoUrl.startsWith('/api/proxy/')) return videoUrl;
+  if (!videoUrl) return undefined;
+  if (videoUrl.startsWith('/api/proxy')) return videoUrl;
   try {
     const parsed = new URL(videoUrl);
     if (!shouldProxyHost(parsed.hostname)) return undefined;
-    return `/api/proxy/${encodeURIComponent(videoUrl)}`;
+    return `/api/proxy?url=${encodeURIComponent(rewriteR2PublicUrl(videoUrl))}`;
   } catch {
     return undefined;
   }
@@ -78,7 +91,7 @@ export function normalizeWorksForDelivery(works: Work[]): Work[] {
       const thumbnail =
         typeof scene.thumbnail === 'string' ? rewriteR2PublicUrl(scene.thumbnail) : scene.thumbnail;
       const audioUrl =
-        typeof scene.audioUrl === 'string' ? rewriteR2PublicUrl(scene.audioUrl) : scene.audioUrl;
+        typeof scene.audioUrl === 'string' ? rewritePossiblyProxiedUrl(scene.audioUrl) : scene.audioUrl;
 
       return {
         ...scene,
@@ -222,9 +235,9 @@ export async function fetchFromGoogleSheets(): Promise<ParsedCmsData> {
     return { works: [], tags: [] };
   }
 
-  if (!IS_VERCEL_RUNTIME && memoryCache.has(CACHE_KEY)) {
-    const cached = memoryCache.get(CACHE_KEY);
-    if (cached && cached.works.length > 0) return cached;
+  if (!IS_VERCEL_RUNTIME) {
+    const cached = getFreshMemoryCache();
+    if (cached) return cached;
   }
 
   const tabNames = [
@@ -257,7 +270,7 @@ export async function fetchFromGoogleSheets(): Promise<ParsedCmsData> {
   };
 
   if (normalized.works.length > 0) {
-    memoryCache.set(CACHE_KEY, normalized);
+    memoryCache.set(CACHE_KEY, { data: normalized, storedAt: Date.now() });
     try {
       await saveToCache(normalized);
     } catch (error) {

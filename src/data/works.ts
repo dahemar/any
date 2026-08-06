@@ -138,6 +138,21 @@ export const works: Work[] = [
     ],
     meta: { year: '2026', location: 'local', format: 'hardcoded video' },
   },
+  {
+    id: 'track-10',
+    title: 'Thyella',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    tags: ['ambient', 'cinematic'],
+    scenes: [
+      {
+        id: 'scene-01',
+        videoUrl: '',
+        thumbnail: undefined,
+        audioUrl: 'https://pub-ab92f061862e4c32b9117317c7b77334.r2.dev/audio/08.%20Thyella.wav',
+      },
+    ],
+    meta: { year: '2026', location: 'local', format: 'hardcoded video' },
+  },
 ];
 
 export const moodTags: TagDefinition[] = [

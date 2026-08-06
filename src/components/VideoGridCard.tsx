@@ -22,6 +22,7 @@ export interface VideoGridCardProps {
   onPause: (index: number) => void;
   setItemRef: (id: string, element: HTMLDivElement | null) => void;
   setVideoRef: (index: number, element: HTMLVideoElement | null) => void;
+  setAudioRef: (index: number, element: HTMLAudioElement | null) => void;
 }
 
 function VideoGridCard({
@@ -38,6 +39,7 @@ function VideoGridCard({
   onPause,
   setItemRef,
   setVideoRef,
+  setAudioRef,
 }: VideoGridCardProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -46,13 +48,36 @@ function VideoGridCard({
     if (!audio || !item.audioSrc) return;
 
     if (isActive && isCurrentPlaying) {
-      void audio.play().catch(() => {});
+      audio.preload = 'auto';
+      audio.volume = 1;
+      audio.muted = false;
+      if (audio.src !== item.audioSrc) {
+        audio.src = item.audioSrc;
+      }
+      if (audio.readyState < 2) {
+        audio.load();
+      }
+      audio.play().catch(async () => {
+        try {
+          audio.load();
+          await audio.play();
+        } catch {
+          // ignore
+        }
+      });
       return;
     }
 
     audio.pause();
     audio.currentTime = 0;
   }, [isActive, isCurrentPlaying, item.audioSrc]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio && item.audioSrc) {
+      audio.src = item.audioSrc;
+    }
+  }, [item.audioSrc]);
 
   return (
     <div
@@ -100,12 +125,15 @@ function VideoGridCard({
           />
           {item.audioSrc ? (
             <audio
-              ref={audioRef}
+              ref={(element) => {
+                audioRef.current = element;
+                setAudioRef(index, element);
+              }}
               className="flat-scene-audio"
-              src={isActive ? item.audioSrc : undefined}
+              src={item.audioSrc}
               preload={isActive ? 'auto' : 'none'}
-              crossOrigin="anonymous"
               loop
+              crossOrigin="anonymous"
               hidden
             />
           ) : null}

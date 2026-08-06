@@ -5,6 +5,28 @@ import type { ParsedIntro } from '../lib/googleSheets/parseAnyWorks';
 const POINTS = 128;
 const MAX_BLUR = 6;
 
+function generateSimulatedData(phase: number): { waveform: number[]; frequencies: number[] } {
+  const waveform: number[] = [];
+  const frequencies: number[] = [];
+
+  for (let i = 0; i < POINTS; i++) {
+    const envelope = Math.pow(Math.sin((Math.PI * i) / (POINTS - 1)), 2.5);
+    const w =
+      Math.sin(phase + i * 0.18) * 0.55 +
+      Math.sin(phase * 1.6 + i * 0.09) * 0.35 +
+      Math.sin(phase * 0.55 + i * 0.04) * 0.25 +
+      Math.sin(phase * 2.1 + i * 0.26) * 0.18;
+    waveform.push(w * envelope);
+    const f =
+      Math.sin(phase * 0.8 + i * 0.03) * 0.5 +
+      Math.sin(phase * 1.2 + i * 0.12) * 0.3 +
+      0.5;
+    frequencies.push(Math.abs(f) * envelope * 0.7);
+  }
+
+  return { waveform, frequencies };
+}
+
 const defaultIntro: ParsedIntro = {
   title: 'sound library',
   description: [

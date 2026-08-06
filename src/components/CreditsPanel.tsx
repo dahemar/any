@@ -12,6 +12,7 @@ interface CreditsPanelProps {
   emptyMessage?: string;
   onTagClick?: (tagId: string) => void;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
+  audioRef?: React.RefObject<HTMLAudioElement | null>;
   currentWorkIndex?: number;
   currentSceneIndex?: number;
   onClose?: () => void;
@@ -26,6 +27,7 @@ export default function CreditsPanel({
   emptyMessage,
   onTagClick,
   videoRef,
+  audioRef,
   currentWorkIndex = 0,
   currentSceneIndex = 0,
   onClose,
@@ -145,6 +147,7 @@ export default function CreditsPanel({
         <VUMeter
           inCreditsPanel
           videoRef={videoRef}
+          audioRef={audioRef}
           currentWorkIndex={currentWorkIndex}
           currentSceneIndex={currentSceneIndex}
         />
