@@ -113,6 +113,12 @@ export default function VUMeter({ videoRef, currentWorkIndex, currentSceneIndex,
   const lastDrawRef = useRef(0);
   const silentFramesRef = useRef(0);
 
+  const resolvePlayingVideo = () => {
+    if (videoRef?.current) return videoRef.current;
+    const videos = Array.from(document.querySelectorAll('video')) as HTMLVideoElement[];
+    return videos.find(video => !video.paused && !video.ended && video.currentTime > 0) || null;
+  };
+
   const connectTargetVideo = (mediaElement: HTMLMediaElement | null) => {
     if (!mediaElement || mediaElement === lastActiveVideoRef.current) return;
     lastActiveVideoRef.current = mediaElement;
