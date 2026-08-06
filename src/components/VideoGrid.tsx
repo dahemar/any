@@ -429,7 +429,7 @@ export default function VideoGrid({
         description={activeItem?.description}
         credits={activeItem?.credits}
         tags={activeItem?.tags ?? []}
-        emptyMessage="click on one of the videos"
+        emptyMessage="click on one of the images"
         onTagClick={onTagClick}
         videoRef={activeVideoRef}
         audioRef={activeAudioRef}
