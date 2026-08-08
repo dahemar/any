@@ -26,6 +26,21 @@ export interface VideoGridCardProps {
   setAudioRef: (index: number, element: HTMLAudioElement | null) => void;
 }
 
+/**
+ * Assign a src to a media element only when it actually changed.
+ *
+ * Comparing `el.src !== rawSrc` is buggy for relative URLs: the `.src`
+ * property always returns the absolutized URL, so a relative `rawSrc`
+ * (e.g. `/api/proxy?url=...`) never matches and the element gets reset on
+ * every render — aborting any in-flight load and preventing playback.
+ * `getAttribute('src')` returns the literal value we set, so it is safe.
+ */
+function ensureMediaSrc(el: HTMLMediaElement, rawSrc: string): void {
+  if (el.getAttribute('src') !== rawSrc) {
+    el.src = rawSrc;
+  }
+}
+
 function VideoGridCard({
   item,
   index,
@@ -45,57 +60,47 @@ function VideoGridCard({
 }: VideoGridCardProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Single owner of the <audio> element lifecycle: src, preload, play/pause.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !item.audioSrc) return;
 
-    const shouldPreload = isActive || isHovered || index < 2;
+    ensureMediaSrc(audio, item.audioSrc);
 
+    const shouldPreload = isActive || isHovered || index < 2;
+    audio.preload = shouldPreload ? 'auto' : 'none';
+
+    if (!(isActive && isCurrentPlaying)) {
+      if (!audio.paused) audio.pause();
+      return;
+    }
+
+    audio.muted = false;
+    audio.volume = 1;
+
+    let cancelled = false;
     const tryPlay = () => {
+      if (cancelled) return;
       audio.play().catch(() => {
-        // ignore play failures until media is ready
+        // autoplay/network failures are retried on the next canplay
       });
     };
 
-    const onCanPlay = () => {
-      if (isActive && isCurrentPlaying) {
-        tryPlay();
-      }
-    };
-
-    if (audio.src !== item.audioSrc) {
-      audio.src = item.audioSrc;
-    }
-
-    if (shouldPreload) {
-      audio.preload = 'auto';
-      if (audio.readyState < 2) {
-        audio.load();
-      }
-    } else {
-      audio.preload = 'none';
-    }
-
-    if (isActive && isCurrentPlaying) {
-      audio.volume = 1;
-      audio.muted = false;
+    if (audio.readyState >= 3) {
+      // HAVE_FUTURE_DATA — can start immediately
       tryPlay();
-      audio.addEventListener('canplay', onCanPlay, { once: true });
-      return () => {
-        audio.removeEventListener('canplay', onCanPlay);
-      };
+      return;
     }
 
-    audio.pause();
-    audio.currentTime = 0;
+    if (audio.readyState < 2 && shouldPreload) {
+      audio.load();
+    }
+    audio.addEventListener('canplay', tryPlay);
+    return () => {
+      cancelled = true;
+      audio.removeEventListener('canplay', tryPlay);
+    };
   }, [isActive, isCurrentPlaying, isHovered, index, item.audioSrc]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (audio && item.audioSrc) {
-      audio.src = item.audioSrc;
-    }
-  }, [item.audioSrc]);
 
   return (
     <div
@@ -149,8 +154,7 @@ function VideoGridCard({
                 setAudioRef(index, element);
               }}
               className="flat-scene-audio"
-              src={item.audioSrc}
-              preload={isActive ? 'auto' : 'none'}
+              preload="none"
               loop
               crossOrigin="anonymous"
               hidden

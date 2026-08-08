@@ -115,12 +115,18 @@ export default function VUMeter({ videoRef, audioRef, currentWorkIndex, currentS
   const silentFramesRef = useRef(0);
 
   const resolvePlayingMedia = () => {
+    // Fast path: reuse the last known playing media without touching the DOM.
+    const last = lastActiveMediaRef.current;
+    if (last && last.isConnected && !last.paused && !last.ended) {
+      return last;
+    }
     if (audioRef?.current && !audioRef.current.paused && !audioRef.current.ended && audioRef.current.currentTime > 0) {
       return audioRef.current;
     }
     if (videoRef?.current && !videoRef.current.paused && !videoRef.current.ended && videoRef.current.currentTime > 0) {
       return videoRef.current;
     }
+    // Slow path fallback (refs not wired yet): scan the document.
     const medias = Array.from(document.querySelectorAll('audio, video')) as HTMLMediaElement[];
     return medias.find(media => !media.paused && !media.ended && media.currentTime > 0) || null;
   };

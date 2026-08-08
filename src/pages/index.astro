@@ -6,6 +6,15 @@ export const prerender = false;
 
 const cms = await loadSiteCms();
 const { works, tags, intro } = cms;
+
+// Cache the rendered HTML at the CDN edge. Data only changes when the
+// Google Sheet is edited, so a short s-maxage plus a long
+// stale-while-revalidate keeps the site fresh while making repeat visits
+// (and cold starts) much faster.
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=300, stale-while-revalidate=3600'
+);
 ---
 
 <html lang="es">

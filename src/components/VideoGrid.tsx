@@ -209,21 +209,23 @@ export default function VideoGrid({
     activeAudioRef.current = activeAudio;
 
     if (activeVideo) {
-      const hasSource = activeVideo.src && activeVideo.src !== window.location.href;
+      const hasSource = Boolean(activeVideo.getAttribute('src'));
       if (hasSource) {
         activeVideoRef.current = activeVideo;
         if (previousIndex !== activeIndex) {
           activeVideo.currentTime = 0;
         }
         activeVideo.volume = 1;
-        activeVideo.muted = false;
+        activeVideo.muted = Boolean(activeItem?.audioSrc);
 
         activeVideo.play().catch(async () => {
           try {
             activeVideo.muted = true;
             await activeVideo.play();
-            activeVideo.muted = false;
-            activeVideo.volume = 1;
+            if (!activeItem?.audioSrc) {
+              activeVideo.muted = false;
+              activeVideo.volume = 1;
+            }
           } catch {
             // ignore autoplay failures
           }
@@ -290,27 +292,12 @@ export default function VideoGrid({
 
   const handleCardClick = useCallback(
     (index: number) => {
-      const video = videoRefs.current[index];
-      const audio = audioRefs.current[index];
-
       if (activeIndex === index && isPlaying) {
+        const video = videoRefs.current[index];
+        const audio = audioRefs.current[index];
         if (video) pauseMedia(video);
         if (audio) pauseMedia(audio);
         setIsPlaying(false);
-        return;
-      }
-
-      if (activeIndex === index) {
-        setIsPlaying(true);
-        if (video) {
-          video.play().catch(() => {
-            video.muted = true;
-            video.play().catch(() => {});
-          });
-        }
-        if (audio) {
-          audio.play().catch(() => {});
-        }
         return;
       }
 
@@ -321,39 +308,26 @@ export default function VideoGrid({
         if (previousAudio) pauseMedia(previousAudio);
       }
 
-      if (audio) {
-        const audioSrc = items[index]?.audioSrc;
-        if (audioSrc && audio.src !== audioSrc) {
-          audio.src = audioSrc;
-        }
-        audio.preload = 'auto';
-        audio.volume = 1;
-        audio.muted = false;
-        if (audio.readyState < 2) {
-          audio.load();
-        }
-        audio.play().catch(() => {});
-      }
-
+      // Playback is owned by the effects (VideoGridCard owns the <audio>,
+      // the playback effect below owns the <video>). We only update state
+      // here so there is a single play() call path and no AbortError races
+      // from concurrent play() requests on the same element.
       setActiveIndex(index);
       setIsPlaying(true);
-      if (video) {
-        video.play().catch(() => {
-          video.muted = true;
-          video.play().catch(() => {});
-        });
-      }
     },
-    [activeIndex, isPlaying, items]
+    [activeIndex, isPlaying]
   );
 
   const handleCardPointerDown = useCallback(
     (index: number) => {
+      // Start the audio network request as early as possible (pointerdown
+      // fires before click), so playback can start sooner. The card effect
+      // stays the single owner of play().
       const audio = audioRefs.current[index];
       const audioSrc = items[index]?.audioSrc;
       if (!audio || !audioSrc) return;
 
-      if (audio.src !== audioSrc) {
+      if (audio.getAttribute('src') !== audioSrc) {
         audio.src = audioSrc;
       }
       audio.preload = 'auto';

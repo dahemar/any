@@ -1,49 +1,28 @@
 import type { APIRoute } from 'astro';
+import { proxyBadRequest, proxyMedia, proxyPreflight } from '../../lib/mediaProxy';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
-  const encoded = url.searchParams.get('url');
-  if (!encoded) {
-    return new Response('Missing proxied URL', { status: 400 });
-  }
+export const OPTIONS: APIRoute = () => proxyPreflight();
 
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(encoded);
-  } catch {
-    return new Response('Invalid proxied URL', { status: 400 });
-  }
-
-  try {
-    const targetUrl = new URL(decoded);
-    const response = await fetch(targetUrl.toString(), {
-      method: 'GET',
-      headers: {
-        accept: 'audio/*, video/*, */*',
-      },
-    });
-
-    if (!response.ok) {
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-      });
-    }
-
-    const headers = new Headers(response.headers);
-    headers.set('Access-Control-Allow-Origin', '*');
-    headers.set('Access-Control-Allow-Headers', 'Range,Content-Type');
-    headers.set('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS');
-    headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
-
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-  } catch (error) {
-    return new Response(`Proxy error: ${error}`, { status: 500 });
-  }
+export const HEAD: APIRoute = async ({ request, url }) => {
+  const decoded = decodeTarget(url);
+  if (decoded === null) return proxyBadRequest('Missing or invalid proxied URL');
+  return proxyMedia(decoded, request);
 };
+
+export const GET: APIRoute = async ({ request, url }) => {
+  const decoded = decodeTarget(url);
+  if (decoded === null) return proxyBadRequest('Missing or invalid proxied URL');
+  return proxyMedia(decoded, request);
+};
+
+function decodeTarget(url: URL): string | null {
+  const encoded = url.searchParams.get('url');
+  if (!encoded) return null;
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return null;
+  }
+}

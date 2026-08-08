@@ -1,57 +1,28 @@
 import type { APIRoute } from 'astro';
+import { proxyBadRequest, proxyMedia, proxyPreflight } from '../../../lib/mediaProxy';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ params }) => {
-  const encodedValue = params.encoded;
-  if (!encodedValue) {
-    return new Response('Missing proxied URL', { status: 400 });
-  }
+export const OPTIONS: APIRoute = () => proxyPreflight();
 
-  const encoded = Array.isArray(encodedValue) ? encodedValue.join('/') : encodedValue;
-  let decoded: string;
-
-  try {
-    decoded = decodeURIComponent(encoded);
-  } catch {
-    return new Response('Invalid proxied URL', { status: 400 });
-  }
-
-  let targetUrl: URL;
-  try {
-    targetUrl = new URL(decoded);
-  } catch {
-    return new Response('Invalid proxied URL', { status: 400 });
-  }
-
-  try {
-    const response = await fetch(targetUrl.toString(), {
-      method: 'GET',
-      headers: {
-        accept: 'audio/*, video/*, */*',
-      },
-    });
-
-    if (!response.ok) {
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-      });
-    }
-
-    const headers = new Headers(response.headers);
-    headers.set('Access-Control-Allow-Origin', '*');
-    headers.set('Access-Control-Allow-Headers', 'Range,Content-Type');
-    headers.set('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS');
-    headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
-
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-  } catch (error) {
-    return new Response(`Proxy error: ${error}`, { status: 500 });
-  }
+export const HEAD: APIRoute = async ({ request, params }) => {
+  const decoded = decodeTarget(params.encoded);
+  if (decoded === null) return proxyBadRequest('Missing or invalid proxied URL');
+  return proxyMedia(decoded, request);
 };
+
+export const GET: APIRoute = async ({ request, params }) => {
+  const decoded = decodeTarget(params.encoded);
+  if (decoded === null) return proxyBadRequest('Missing or invalid proxied URL');
+  return proxyMedia(decoded, request);
+};
+
+function decodeTarget(encodedValue: string | string[] | undefined): string | null {
+  if (!encodedValue) return null;
+  const encoded = Array.isArray(encodedValue) ? encodedValue.join('/') : encodedValue;
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return null;
+  }
+}
