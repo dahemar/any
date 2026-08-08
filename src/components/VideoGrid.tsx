@@ -24,6 +24,20 @@ interface FlatVideoItem {
   sceneIndex: number;
 }
 
+const PROXY_HOSTNAMES = ['github.com', 'release-assets.githubusercontent.com'];
+
+function shouldProxyUrl(url: URL): boolean {
+  return (
+    PROXY_HOSTNAMES.includes(url.hostname) ||
+    url.hostname.endsWith('.s3.amazonaws.com') ||
+    url.hostname.endsWith('.r2.dev')
+  );
+}
+
+function buildProxyUrl(rawUrl: string): string {
+  return `/api/proxy?url=${encodeURIComponent(rawUrl)}`;
+}
+
 function getSceneSource(scene?: Work['scenes'][number] | null): string | undefined {
   const src = scene?.proxiedVideoUrl ?? scene?.videoUrl;
   if (typeof src !== 'string') return undefined;
@@ -37,12 +51,12 @@ function getSceneAudioSource(scene?: Work['scenes'][number] | null): string | un
   const trimmed = src.trim();
   if (!trimmed) return undefined;
 
-  if (trimmed.startsWith('/api/proxy/')) return trimmed;
+  if (trimmed.startsWith('/api/proxy')) return trimmed;
   if (/^https?:\/\//i.test(trimmed)) {
     try {
       const parsed = new URL(trimmed);
-      if (parsed.hostname.endsWith('.r2.dev')) {
-        return `/api/proxy/${encodeURIComponent(trimmed)}`;
+      if (shouldProxyUrl(parsed)) {
+        return buildProxyUrl(trimmed);
       }
     } catch {
       return trimmed;
@@ -274,19 +288,54 @@ export default function VideoGrid({
 
   const hasFocusState = hoveredIndex !== null || isPlaying;
 
-  const handleCardClick = useCallback((index: number) => {
-    console.log('[click] card', index, 'current active:', activeIndex);
-    const video = videoRefs.current[index];
-    const audio = audioRefs.current[index];
+  const handleCardClick = useCallback(
+    (index: number) => {
+      const video = videoRefs.current[index];
+      const audio = audioRefs.current[index];
 
-    if (activeIndex === index && isPlaying) {
-      if (video) pauseMedia(video);
-      if (audio) pauseMedia(audio);
-      setIsPlaying(false);
-      return;
-    }
+      if (activeIndex === index && isPlaying) {
+        if (video) pauseMedia(video);
+        if (audio) pauseMedia(audio);
+        setIsPlaying(false);
+        return;
+      }
 
-    if (activeIndex === index) {
+      if (activeIndex === index) {
+        setIsPlaying(true);
+        if (video) {
+          video.play().catch(() => {
+            video.muted = true;
+            video.play().catch(() => {});
+          });
+        }
+        if (audio) {
+          audio.play().catch(() => {});
+        }
+        return;
+      }
+
+      if (activeIndex !== null && activeIndex !== index) {
+        const previousVideo = videoRefs.current[activeIndex];
+        const previousAudio = audioRefs.current[activeIndex];
+        if (previousVideo) pauseMedia(previousVideo);
+        if (previousAudio) pauseMedia(previousAudio);
+      }
+
+      if (audio) {
+        const audioSrc = items[index]?.audioSrc;
+        if (audioSrc && audio.src !== audioSrc) {
+          audio.src = audioSrc;
+        }
+        audio.preload = 'auto';
+        audio.volume = 1;
+        audio.muted = false;
+        if (audio.readyState < 2) {
+          audio.load();
+        }
+        audio.play().catch(() => {});
+      }
+
+      setActiveIndex(index);
       setIsPlaying(true);
       if (video) {
         video.play().catch(() => {
@@ -294,37 +343,26 @@ export default function VideoGrid({
           video.play().catch(() => {});
         });
       }
-      if (audio) {
-        audio.play().catch(() => {});
+    },
+    [activeIndex, isPlaying, items]
+  );
+
+  const handleCardPointerDown = useCallback(
+    (index: number) => {
+      const audio = audioRefs.current[index];
+      const audioSrc = items[index]?.audioSrc;
+      if (!audio || !audioSrc) return;
+
+      if (audio.src !== audioSrc) {
+        audio.src = audioSrc;
       }
-      return;
-    }
-
-    if (activeIndex !== null && activeIndex !== index) {
-      const previousVideo = videoRefs.current[activeIndex];
-      const previousAudio = audioRefs.current[activeIndex];
-      if (previousVideo) pauseMedia(previousVideo);
-      if (previousAudio) pauseMedia(previousAudio);
-    }
-
-    setActiveIndex(index);
-    setIsPlaying(true);
-    if (video) {
-      video.play().catch(() => {
-        video.muted = true;
-        video.play().catch(() => {});
-      });
-    }
-    if (audio) {
       audio.preload = 'auto';
-      audio.volume = 1;
-      audio.muted = false;
       if (audio.readyState < 2) {
         audio.load();
       }
-      audio.play().catch(() => {});
-    }
-  }, [activeIndex, isPlaying]);
+    },
+    [items]
+  );
 
   const handleCardHover = useCallback(
     (index: number) => {
@@ -414,6 +452,7 @@ export default function VideoGrid({
             isHovered={hoveredIndex === index}
             onCardClick={handleCardClick}
             onCardHover={handleCardHover}
+            onCardPointerDown={handleCardPointerDown}
             onPlaying={handlePlaying}
             onPause={handlePause}
             setItemRef={setItemRef}

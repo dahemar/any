@@ -18,6 +18,7 @@ export interface VideoGridCardProps {
   isHovered: boolean;
   onCardClick: (index: number) => void;
   onCardHover: (index: number) => void;
+  onCardPointerDown: (index: number) => void;
   onPlaying: (index: number) => void;
   onPause: (index: number) => void;
   setItemRef: (id: string, element: HTMLDivElement | null) => void;
@@ -35,6 +36,7 @@ function VideoGridCard({
   isHovered,
   onCardClick,
   onCardHover,
+  onCardPointerDown,
   onPlaying,
   onPause,
   setItemRef,
@@ -109,6 +111,7 @@ function VideoGridCard({
         type="button"
         className="flat-scene-button"
         onClick={() => onCardClick(index)}
+        onPointerDown={() => onCardPointerDown(index)}
         onMouseEnter={() => onCardHover(index)}
         onFocus={() => onCardHover(index)}
         aria-pressed={isActive}
