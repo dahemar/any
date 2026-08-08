@@ -1426,16 +1426,17 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
     opacity: 0.4;
   }
 
-  /* Mobile prev/next arrows fixed on the sides of the credits panel */
+  /* Mobile prev/next arrows fixed on the sides of the credits panel,
+     raised to the upper area of the panel, sitting in the side gutters */
   .mobile-panel-arrow {
     position: fixed;
-    bottom: calc(min(13dvh, 6.5rem) / 2 + env(safe-area-inset-bottom, 0px));
+    bottom: calc(min(26dvh, 13rem) * 0.64 + env(safe-area-inset-bottom, 0px));
     z-index: 101;
     appearance: none;
     border: none;
     background: none;
-    padding: 0.65rem 0.4rem;
-    font: 400 1.2rem/1 'IBM Plex Mono', monospace;
+    padding: 0.6rem 0.5rem;
+    font: 400 1.25rem/1 'IBM Plex Mono', monospace;
     color: rgba(122, 33, 49, 0.65);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
@@ -1447,15 +1448,15 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
   }
 
   .mobile-panel-arrow--prev {
-    left: 0.2rem;
+    left: 0.3rem;
   }
 
   .mobile-panel-arrow--next {
-    right: 0.2rem;
+    right: 0.3rem;
   }
 
   .flat-scene-grid.mobile-playing .mobile-panel-arrow {
-    bottom: calc(min(26dvh, 14rem) / 2 + env(safe-area-inset-bottom, 0px));
+    bottom: calc(min(52dvh, 28rem) * 0.6 + env(safe-area-inset-bottom, 0px));
   }
 }
 
