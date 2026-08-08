@@ -47,30 +47,46 @@ function VideoGridCard({
     const audio = audioRef.current;
     if (!audio || !item.audioSrc) return;
 
-    if (isActive && isCurrentPlaying) {
-      audio.preload = 'auto';
-      audio.volume = 1;
-      audio.muted = false;
-      if (audio.src !== item.audioSrc) {
-        audio.src = item.audioSrc;
+    const shouldPreload = isActive || isHovered || index < 2;
+
+    const tryPlay = () => {
+      audio.play().catch(() => {
+        // ignore play failures until media is ready
+      });
+    };
+
+    const onCanPlay = () => {
+      if (isActive && isCurrentPlaying) {
+        tryPlay();
       }
+    };
+
+    if (audio.src !== item.audioSrc) {
+      audio.src = item.audioSrc;
+    }
+
+    if (shouldPreload) {
+      audio.preload = 'auto';
       if (audio.readyState < 2) {
         audio.load();
       }
-      audio.play().catch(async () => {
-        try {
-          audio.load();
-          await audio.play();
-        } catch {
-          // ignore
-        }
-      });
-      return;
+    } else {
+      audio.preload = 'none';
+    }
+
+    if (isActive && isCurrentPlaying) {
+      audio.volume = 1;
+      audio.muted = false;
+      tryPlay();
+      audio.addEventListener('canplay', onCanPlay, { once: true });
+      return () => {
+        audio.removeEventListener('canplay', onCanPlay);
+      };
     }
 
     audio.pause();
     audio.currentTime = 0;
-  }, [isActive, isCurrentPlaying, item.audioSrc]);
+  }, [isActive, isCurrentPlaying, isHovered, index, item.audioSrc]);
 
   useEffect(() => {
     const audio = audioRef.current;
