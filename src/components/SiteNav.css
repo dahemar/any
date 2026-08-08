@@ -38,7 +38,6 @@
 }
 
 .site-nav-link {
-  position: relative;
   appearance: none;
   border: none;
   background: none;
@@ -51,25 +50,6 @@
   cursor: pointer;
   transition: color 0.25s ease;
   -webkit-tap-highlight-color: transparent;
-}
-
-/* Subtle active-section indicator */
-.site-nav-link::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -3px;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.85;
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.site-nav-link.active::after {
-  transform: scaleX(1);
 }
 
 .site-nav-link:hover,
