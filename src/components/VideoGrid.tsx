@@ -134,20 +134,15 @@ export default function VideoGrid({
     };
   }, []);
 
-  useEffect(() => {
-    if (!isMobileViewport) return;
-    if (isPanelVisible) {
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
+  const cancelPendingClose = useCallback(() => {
+    // A close (mobile ×) schedules activeIndex=null after 250ms. Any new
+    // interaction before that fires must cancel it, otherwise the freshly
+    // selected track gets deselected by the stale timer.
+    if (closingTimerRef.current) {
+      clearTimeout(closingTimerRef.current);
+      closingTimerRef.current = null;
     }
-    return () => {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-    };
-  }, [isMobileViewport, isPanelVisible]);
+  }, []);
 
   useEffect(() => {
     if (initialWorkId == null || initialIndex < 0) return;
@@ -292,6 +287,8 @@ export default function VideoGrid({
 
   const handleCardClick = useCallback(
     (index: number) => {
+      cancelPendingClose();
+
       if (activeIndex === index && isPlaying) {
         const video = videoRefs.current[index];
         const audio = audioRefs.current[index];
@@ -315,11 +312,13 @@ export default function VideoGrid({
       setActiveIndex(index);
       setIsPlaying(true);
     },
-    [activeIndex, isPlaying]
+    [activeIndex, isPlaying, cancelPendingClose]
   );
 
   const handleCardPointerDown = useCallback(
     (index: number) => {
+      cancelPendingClose();
+
       // Start the audio network request as early as possible (pointerdown
       // fires before click), so playback can start sooner. The card effect
       // stays the single owner of play().
@@ -335,7 +334,7 @@ export default function VideoGrid({
         audio.load();
       }
     },
-    [items]
+    [items, cancelPendingClose]
   );
 
   const handleCardHover = useCallback(

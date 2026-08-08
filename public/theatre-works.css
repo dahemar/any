@@ -1389,8 +1389,8 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
   }
 
   .flat-scene-item {
-    opacity: 1 !important;
     filter: none !important;
+    scroll-margin-top: calc(var(--site-nav-height, 2.75rem) + 0.65rem);
   }
 }
 
@@ -1405,10 +1405,17 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
     min-height: 16rem;
   }
 
+  /* While playing on mobile, de-emphasize the other items without
+     collapsing them. The previous approach (visibility:hidden + height:0)
+     corrupted the content-visibility remembered sizes and made adjacent
+     thumbnails disappear after stopping playback, and caused big scroll
+     jumps. A simple opacity change keeps layout stable and lets the user
+     keep browsing the catalogue while listening. */
+  .flat-scene-grid.mobile-playing .flat-scene-item {
+    transition: opacity 240ms ease;
+  }
+
   .flat-scene-grid.mobile-playing .flat-scene-item:not(.playing) {
-    visibility: hidden;
-    height: 0;
-    margin: 0;
-    overflow: hidden;
+    opacity: 0.4;
   }
 }
