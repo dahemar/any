@@ -33,19 +33,21 @@
   width: min(100%, 34rem);
   min-height: 13.25rem;
   margin-top: 0.05rem;
-  border-radius: 1.5rem;
+  border-radius: 42% 58% 55% 45% / 48% 52% 48% 52%;
   background:
-    radial-gradient(ellipse 38% 58% at 24% 52%, rgba(255, 255, 255, 0.5), transparent 72%),
-    radial-gradient(ellipse 44% 62% at 50% 44%, rgba(247, 243, 237, 0.62), transparent 74%),
-    radial-gradient(ellipse 38% 56% at 76% 54%, rgba(255, 255, 255, 0.46), transparent 72%);
+    radial-gradient(ellipse 55% 70% at 30% 40%, rgba(255, 255, 255, 0.55), transparent 65%),
+    radial-gradient(ellipse 50% 65% at 55% 38%, rgba(247, 243, 237, 0.68), transparent 65%),
+    radial-gradient(ellipse 45% 60% at 72% 50%, rgba(255, 255, 255, 0.48), transparent 62%),
+    radial-gradient(ellipse 40% 50% at 42% 62%, rgba(247, 243, 237, 0.42), transparent 58%),
+    radial-gradient(ellipse 35% 45% at 18% 48%, rgba(255, 255, 255, 0.35), transparent 58%);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.35rem, 1.2vw, 0.75rem) clamp(0.55rem, 1.8vw, 1.2rem);
-  padding: 1.25rem 1.5rem;
+  gap: clamp(0.3rem, 1.2vw, 0.65rem) clamp(0.45rem, 1.6vw, 1rem);
+  padding: 1.5rem 1.75rem;
   box-sizing: border-box;
-  line-height: 1;
+  line-height: 1.15;
 }
 
 .tag-cloud-word {

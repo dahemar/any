@@ -72,18 +72,26 @@ interface TagWordCloudProps {
 const TagWordCloud = memo(function TagWordCloud({ tags, activeTagIds, onTagClick, ariaLabel }: TagWordCloudProps) {
   return (
     <div className="tag-word-cloud" role="list" aria-label={ariaLabel}>
-      {tags.map((tag) => (
+      {tags.map((tag, i) => {
+        const floatOffset = Math.round(
+          Math.sin(i * 0.78) * 6 +
+          Math.sin(i * 1.35 + 1.2) * 4 +
+          Math.sin(i * 2.1 + 2.5) * 2.5
+        );
+        return (
         <button
           key={tag.id}
           type="button"
           role="listitem"
-              className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
+          className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
+          style={{ marginTop: `${floatOffset}px`, marginBottom: `${-floatOffset * 0.5}px` }}
           onClick={() => onTagClick(tag.id)}
           aria-pressed={activeTagIds.has(tag.id)}
         >
           {tag.label}
         </button>
-      ))}
+        );
+      })}
     </div>
   );
 });
