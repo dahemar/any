@@ -1083,6 +1083,10 @@ body,
   opacity: 0.08 !important;
 }
 
+.flat-scene-item.no-video.playing .flat-scene-poster {
+  opacity: 1 !important;
+}
+
 .flat-scene-caption {
   position: static;
   display: flex;

@@ -84,7 +84,7 @@ function VideoGridCard({
       role="listitem"
       data-work-index={workIndex}
       data-scene-index={sceneIndex}
-      className={`flat-scene-item ${isActive ? 'active' : ''} ${isCurrentPlaying ? 'playing' : ''} ${isHovered ? 'hovered' : ''}`}
+      className={`flat-scene-item ${isActive ? 'active' : ''} ${isCurrentPlaying ? 'playing' : ''} ${isHovered ? 'hovered' : ''} ${!item.src ? 'no-video' : ''}`}
       ref={(element) => {
         setItemRef(item.id, element);
       }}
