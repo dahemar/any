@@ -399,6 +399,41 @@ export default function VideoGrid({
     audioRefs.current[index] = element;
   }, []);
 
+  const navigateTo = useCallback(
+    (index: number) => {
+      cancelPendingClose();
+      if (activeIndex !== null && activeIndex !== index) {
+        const previousVideo = videoRefs.current[activeIndex];
+        const previousAudio = audioRefs.current[activeIndex];
+        if (previousVideo) pauseMedia(previousVideo);
+        if (previousAudio) pauseMedia(previousAudio);
+      }
+      setActiveIndex(index);
+      setIsPlaying(true);
+    },
+    [activeIndex, cancelPendingClose]
+  );
+
+  const handlePrev = useCallback(() => {
+    if (activeIndex === null && items.length > 0) {
+      navigateTo(0);
+      return;
+    }
+    if (activeIndex === null) return;
+    const prevIndex = (activeIndex - 1 + items.length) % items.length;
+    navigateTo(prevIndex);
+  }, [activeIndex, items.length, navigateTo]);
+
+  const handleNext = useCallback(() => {
+    if (activeIndex === null && items.length > 0) {
+      navigateTo(0);
+      return;
+    }
+    if (activeIndex === null) return;
+    const nextIndex = (activeIndex + 1) % items.length;
+    navigateTo(nextIndex);
+  }, [activeIndex, items.length, navigateTo]);
+
   if (items.length === 0) {
     return <div className="video-grid-empty">No videos found.</div>;
   }
@@ -449,6 +484,27 @@ export default function VideoGrid({
         currentSceneIndex={activeItem?.sceneIndex ?? 0}
         onClose={isMobilePlaying ? handleStopMobile : undefined}
       />
+
+      {isMobileViewport && isPanelVisible && (
+        <>
+          <button
+            type="button"
+            className="mobile-panel-arrow mobile-panel-arrow--prev"
+            onClick={handlePrev}
+            aria-label="Previous track"
+          >
+            &lt;
+          </button>
+          <button
+            type="button"
+            className="mobile-panel-arrow mobile-panel-arrow--next"
+            onClick={handleNext}
+            aria-label="Next track"
+          >
+            &gt;
+          </button>
+        </>
+      )}
     </div>
   );
 }

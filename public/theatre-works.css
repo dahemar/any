@@ -1425,6 +1425,38 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
   .flat-scene-grid.mobile-playing .flat-scene-item:not(.playing) {
     opacity: 0.4;
   }
+
+  /* Mobile prev/next arrows fixed on the sides of the credits panel */
+  .mobile-panel-arrow {
+    position: fixed;
+    bottom: calc(min(13dvh, 6.5rem) / 2 + env(safe-area-inset-bottom, 0px));
+    z-index: 101;
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0.65rem 0.4rem;
+    font: 400 1.2rem/1 'IBM Plex Mono', monospace;
+    color: rgba(122, 33, 49, 0.65);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.18s ease;
+  }
+
+  .mobile-panel-arrow:active {
+    color: rgba(122, 33, 49, 1);
+  }
+
+  .mobile-panel-arrow--prev {
+    left: 0.2rem;
+  }
+
+  .mobile-panel-arrow--next {
+    right: 0.2rem;
+  }
+
+  .flat-scene-grid.mobile-playing .mobile-panel-arrow {
+    bottom: calc(min(26dvh, 14rem) / 2 + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* ---- Subtle global UX polish ---- */
