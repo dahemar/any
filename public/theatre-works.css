@@ -13,6 +13,7 @@
 html {
   scrollbar-gutter: auto;
   scroll-padding-top: var(--site-nav-clearance, calc(var(--site-nav-height, 2.75rem) + 0.85rem));
+  overflow-x: hidden;
 }
 
 body {
@@ -27,6 +28,8 @@ body {
   overflow-x: hidden;
   font-weight: 400;
   letter-spacing: -0.01em;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
 }
 
 * {
