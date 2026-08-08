@@ -69,27 +69,62 @@ interface TagWordCloudProps {
   ariaLabel: string;
 }
 
+function seededRandom(seed: number, salt = 0): number {
+  const x = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function interleaveBySize(tags: CloudTag[]): number[] {
+  const buckets: Record<CloudSize, number[]> = { lg: [], md: [], sm: [] };
+  tags.forEach((tag, i) => buckets[tag.size].push(i));
+  const cycle: CloudSize[] = ['lg', 'md', 'sm', 'md'];
+  const cursors: Record<CloudSize, number> = { lg: 0, md: 0, sm: 0 };
+  const order: number[] = [];
+  let c = 0;
+  while (order.length < tags.length) {
+    const size = cycle[c++ % cycle.length];
+    if (cursors[size] < buckets[size].length) {
+      order.push(buckets[size][cursors[size]++]);
+    }
+  }
+  return order;
+}
+
 const TagWordCloud = memo(function TagWordCloud({ tags, activeTagIds, onTagClick, ariaLabel }: TagWordCloudProps) {
+  const order = useMemo(() => interleaveBySize(tags), [tags]);
+
   return (
     <div className="tag-word-cloud" role="list" aria-label={ariaLabel}>
-      {tags.map((tag, i) => {
-        const floatOffset = Math.round(
-          Math.sin(i * 0.78) * 6 +
-          Math.sin(i * 1.35 + 1.2) * 4 +
-          Math.sin(i * 2.1 + 2.5) * 2.5
-        );
+      {order.map((idx, position) => {
+        const tag = tags[idx];
+        const rotation = (seededRandom(idx, 1) - 0.5) * 6;
+        const jitterX = (seededRandom(idx, 2) - 0.5) * 8;
+        const marginTop = 2 + seededRandom(idx, 3) * 12;
+        const marginBottom = 2 + seededRandom(idx, 4) * 10;
+        const hSlot = Math.floor(seededRandom(idx, 5) * 3);
+        const hStyle: React.CSSProperties =
+          hSlot === 0 ? { marginRight: 'auto' } :
+          hSlot === 1 ? { marginLeft: 'auto', marginRight: 'auto' } :
+          { marginLeft: 'auto' };
+
         return (
-        <button
-          key={tag.id}
-          type="button"
-          role="listitem"
-          className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
-          style={{ marginTop: `${floatOffset}px`, marginBottom: `${-floatOffset * 0.5}px` }}
-          onClick={() => onTagClick(tag.id)}
-          aria-pressed={activeTagIds.has(tag.id)}
-        >
-          {tag.label}
-        </button>
+          <button
+            key={tag.id}
+            type="button"
+            role="listitem"
+            className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
+            style={{
+              ...hStyle,
+              '--tag-rotate': `${rotation}deg`,
+              '--tag-jitter-x': `${jitterX}px`,
+              marginTop,
+              marginBottom,
+            } as React.CSSProperties}
+            onClick={() => onTagClick(tag.id)}
+            aria-pressed={activeTagIds.has(tag.id)}
+          >
+            {tag.label}
+          </button>
         );
       })}
     </div>

@@ -31,7 +31,6 @@
 .tag-word-cloud {
   position: relative;
   width: min(100%, 34rem);
-  min-height: 13.25rem;
   margin-top: 0.05rem;
   border-radius: 42% 58% 55% 45% / 48% 52% 48% 52%;
   background:
@@ -40,18 +39,20 @@
     radial-gradient(ellipse 45% 60% at 72% 50%, rgba(255, 255, 255, 0.48), transparent 62%),
     radial-gradient(ellipse 40% 50% at 42% 62%, rgba(247, 243, 237, 0.42), transparent 58%),
     radial-gradient(ellipse 35% 45% at 18% 48%, rgba(255, 255, 255, 0.35), transparent 58%);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(0.3rem, 1.2vw, 0.65rem) clamp(0.45rem, 1.6vw, 1rem);
-  padding: 1.5rem 1.75rem;
+  column-width: 120px;
+  column-gap: 1rem;
+  padding: 1.25rem 1.25rem 1.5rem;
   box-sizing: border-box;
   line-height: 1.15;
 }
 
 .tag-cloud-word {
-  position: static;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  break-inside: avoid;
+  transform: rotate(var(--tag-rotate)) translateX(var(--tag-jitter-x));
+  transform-origin: center;
   appearance: none;
   border: none;
   background: none;
@@ -268,7 +269,9 @@
 
   .tag-word-cloud {
     width: 100%;
-    min-height: 11rem;
+    column-width: 100px;
+    column-gap: 0.65rem;
+    padding: 1rem 0.875rem 1.25rem;
   }
 
   .search-matches-list {
