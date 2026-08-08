@@ -41,6 +41,8 @@
 .credits-panel.hidden {
   transform: translateX(100%);
   transition: none;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .credits-panel.visible {
@@ -245,10 +247,18 @@
 
   .credits-panel.visible {
     transform: translateY(0);
+    visibility: visible;
   }
 
   .credits-panel.hidden {
     transform: translateY(100%);
+    pointer-events: none;
+    /* Hide only after the slide-out transition has finished */
+    visibility: hidden;
+    transition:
+      transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+      height 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0s linear 0.22s;
   }
 
   .credits-scroll-region {
@@ -280,18 +290,21 @@
 
   .credits-close-button {
     position: absolute;
-    top: 0.6rem;
-    right: 0.6rem;
+    top: 0.35rem;
+    right: 0.35rem;
     z-index: 10;
     appearance: none;
     border: none;
     background: none;
-    padding: 0.15rem;
+    /* ~40px hit area without changing the visual glyph position */
+    padding: 0.5rem;
+    margin: -0.15rem -0.15rem 0 0;
     font: inherit;
     font-size: 1.15rem;
     line-height: 0.7;
     color: var(--any-muted, #6d6d6d);
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 

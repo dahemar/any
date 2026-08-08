@@ -68,7 +68,13 @@ export default function CreditsPanel({
   }, [isVisible, updateBottomFade]);
 
   if (!isVisible) {
-    return null;
+    // Keep the panel mounted (off-screen) so the CSS slide transition can
+    // play on exit/entrance instead of the panel popping in and out.
+    return (
+      <div className="credits-panel hidden" aria-hidden="true">
+        <div className="credits-scroll-region" />
+      </div>
+    );
   }
 
   const handleWheel = (e: React.WheelEvent) => {

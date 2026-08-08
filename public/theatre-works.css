@@ -1069,6 +1069,13 @@ body,
   transition: opacity 220ms ease;
   z-index: 8;
   background: var(--any-bg-soft, #f7f3ed);
+  animation: flat-poster-in 380ms ease-out;
+}
+
+@keyframes flat-poster-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .flat-scene-video {
@@ -1417,5 +1424,43 @@ body.player-mode-active .mobile-fixed-player .video-wrapper {
 
   .flat-scene-grid.mobile-playing .flat-scene-item:not(.playing) {
     opacity: 0.4;
+  }
+}
+
+/* ---- Subtle global UX polish ---- */
+
+/* Remove the grey tap flash on touch devices */
+.flat-scene-button,
+.site-nav-link,
+.tag-pill,
+.credits-close-button,
+.search-tag-pill {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Visible keyboard focus, consistent with the accent palette */
+.flat-scene-button:focus-visible,
+.site-nav-link:focus-visible,
+.tag-pill:focus-visible,
+.credits-close-button:focus-visible,
+.search-tag-pill:focus-visible {
+  outline: 1.5px solid rgba(122, 33, 49, 0.55);
+  outline-offset: 3px;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .flat-scene-poster {
+    animation: none;
+  }
+
+  .flat-scene-playing-line {
+    animation: none;
+    transform: scaleY(0.7);
+    opacity: 0.85;
+  }
+
+  .flat-scene-grid.mobile-playing .flat-scene-item {
+    transition: none;
   }
 }
