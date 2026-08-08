@@ -143,15 +143,13 @@ export default function CreditsPanel({
 
       <div className="credits-bottom-fade" aria-hidden="true" />
 
-      {!isMobileViewport && (
-        <VUMeter
-          inCreditsPanel
-          videoRef={videoRef}
-          audioRef={audioRef}
-          currentWorkIndex={currentWorkIndex}
-          currentSceneIndex={currentSceneIndex}
-        />
-      )}
+      <VUMeter
+        inCreditsPanel
+        videoRef={videoRef}
+        audioRef={audioRef}
+        currentWorkIndex={currentWorkIndex}
+        currentSceneIndex={currentSceneIndex}
+      />
     </div>
   );
 }

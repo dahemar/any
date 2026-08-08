@@ -22,8 +22,17 @@
 }
 
 @media (max-width: 768px) {
-  .vumeter-container {
+  .vumeter-container:not(.in-credits-panel) {
     display: none;
+  }
+  .in-credits-panel.vumeter-container {
+    display: flex;
+    position: relative;
+    bottom: auto;
+    right: auto;
+    width: 100%;
+    justify-content: flex-end;
+    padding: 0.5rem 0;
   }
 }
 
