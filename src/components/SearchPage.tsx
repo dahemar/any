@@ -77,7 +77,7 @@ const TagWordCloud = memo(function TagWordCloud({ tags, activeTagIds, onTagClick
           key={tag.id}
           type="button"
           role="listitem"
-          className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--p${tag.position % 18} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
+              className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
           onClick={() => onTagClick(tag.id)}
           aria-pressed={activeTagIds.has(tag.id)}
         >

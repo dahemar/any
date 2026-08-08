@@ -31,18 +31,25 @@
 .tag-word-cloud {
   position: relative;
   width: min(100%, 34rem);
-  height: 13.25rem;
+  min-height: 13.25rem;
   margin-top: 0.05rem;
-  border-radius: 999px;
+  border-radius: 1.5rem;
   background:
     radial-gradient(ellipse 38% 58% at 24% 52%, rgba(255, 255, 255, 0.5), transparent 72%),
     radial-gradient(ellipse 44% 62% at 50% 44%, rgba(247, 243, 237, 0.62), transparent 74%),
     radial-gradient(ellipse 38% 56% at 76% 54%, rgba(255, 255, 255, 0.46), transparent 72%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.35rem, 1.2vw, 0.75rem) clamp(0.55rem, 1.8vw, 1.2rem);
+  padding: 1.25rem 1.5rem;
+  box-sizing: border-box;
   line-height: 1;
 }
 
 .tag-cloud-word {
-  position: absolute;
+  position: static;
   appearance: none;
   border: none;
   background: none;
@@ -85,26 +92,6 @@
   font-size: var(--any-type-max, 0.88rem);
   opacity: 1;
 }
-
-/* Cloud layout — wider spread between tags */
-.tag-cloud-word--p0 { left: 50%; top: 46%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p1 { left: 58%; top: 52%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p2 { left: 30%; top: 54%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p3 { left: 70%; top: 40%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p4 { left: 76%; top: 58%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p5 { left: 22%; top: 60%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p6 { left: 48%; top: 66%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p7 { left: 62%; top: 30%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p8 { left: 38%; top: 26%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p9 { left: 78%; top: 46%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p10 { left: 18%; top: 44%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p11 { left: 46%; top: 74%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p12 { left: 66%; top: 72%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p13 { left: 32%; top: 74%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p14 { left: 42%; top: 18%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p15 { left: 64%; top: 20%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p16 { left: 26%; top: 36%; transform: translate(-50%, -50%); }
-.tag-cloud-word--p17 { left: 54%; top: 80%; transform: translate(-50%, -50%); }
 
 .tag-cloud-word:hover,
 .tag-cloud-word.active {
@@ -279,7 +266,7 @@
 
   .tag-word-cloud {
     width: 100%;
-    height: 11rem;
+    min-height: 11rem;
   }
 
   .search-matches-list {
