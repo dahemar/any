@@ -104,7 +104,8 @@ function VideoGridCard({
               src={item.thumbnail}
               alt=""
               className="flat-scene-poster"
-              loading="lazy"
+              loading={index < 4 ? 'eager' : 'lazy'}
+              fetchPriority={index < 4 ? 'high' : 'auto'}
               decoding="async"
               draggable={false}
             />
@@ -115,7 +116,6 @@ function VideoGridCard({
               setVideoRef(index, element);
             }}
             src={isActive ? item.src : undefined}
-            poster={item.thumbnail}
             playsInline
             preload={isActive ? 'auto' : 'none'}
             muted={Boolean(item.audioSrc)}
