@@ -212,7 +212,7 @@
 @media (max-width: 768px) {
   .credits-panel .credits-vumeter {
     position: absolute;
-    right: 0.75rem;
+    right: calc(0.75rem + 10px);
     bottom: 0.5rem;
     display: flex;
     justify-content: flex-end;
