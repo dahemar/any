@@ -30,7 +30,7 @@
 
 .tag-word-cloud {
   position: relative;
-  width: min(100%, 34rem);
+  width: min(100%, 44rem);
   margin-top: 0.05rem;
   border-radius: 42% 58% 55% 45% / 48% 52% 48% 52%;
   background:
@@ -39,24 +39,24 @@
     radial-gradient(ellipse 45% 60% at 72% 50%, rgba(255, 255, 255, 0.48), transparent 62%),
     radial-gradient(ellipse 40% 50% at 42% 62%, rgba(247, 243, 237, 0.42), transparent 58%),
     radial-gradient(ellipse 35% 45% at 18% 48%, rgba(255, 255, 255, 0.35), transparent 58%);
-  /* Centered flex cloud: words sit in normal flow (no overlap), cluster
-     toward the middle instead of sticking to the edges, and reflow
-     automatically when tags are added or removed. */
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
-  gap: 0.1rem 0.9rem;
-  padding: 1.5rem 1.75rem 1.75rem;
+  padding: 1.5rem 1.25rem;
   box-sizing: border-box;
   line-height: 1.15;
 }
 
+/* Absolutely-positioned, collision-free scatter (word-cloud layout) */
+.tag-cloud-stage {
+  position: relative;
+  margin: 0 auto;
+}
+
+.tag-cloud-scatter {
+  position: relative;
+  transform-origin: top left;
+}
+
 .tag-cloud-word {
-  display: inline-flex;
-  align-items: baseline;
-  max-width: 100%;
+  position: absolute;
   appearance: none;
   border: none;
   background: none;
@@ -273,8 +273,7 @@
 
   .tag-word-cloud {
     width: 100%;
-    gap: 0.08rem 0.7rem;
-    padding: 1.25rem 1rem 1.5rem;
+    padding: 1.25rem 0.5rem;
   }
 
   .search-matches-list {

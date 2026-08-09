@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { slugifyTagId } from '../lib/cms/tags';
 import type { TagDefinition, Work } from '../lib/types';
 import './SearchPage.css';
@@ -69,55 +69,159 @@ interface TagWordCloudProps {
   ariaLabel: string;
 }
 
-function seededRandom(seed: number, salt = 0): number {
-  const x = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
-  return x - Math.floor(x);
+const SIZE_PX: Record<CloudSize, number> = { sm: 12.2, md: 13.1, lg: 14.1 };
+
+function hashSeed(input: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
 }
 
-function interleaveBySize(tags: CloudTag[]): number[] {
-  const buckets: Record<CloudSize, number[]> = { lg: [], md: [], sm: [] };
-  tags.forEach((tag, i) => buckets[tag.size].push(i));
-  const cycle: CloudSize[] = ['lg', 'md', 'sm', 'md'];
-  const cursors: Record<CloudSize, number> = { lg: 0, md: 0, sm: 0 };
-  const order: number[] = [];
-  let c = 0;
-  while (order.length < tags.length) {
-    const size = cycle[c++ % cycle.length];
-    if (cursors[size] < buckets[size].length) {
-      order.push(buckets[size][cursors[size]++]);
-    }
+interface PlacedWord {
+  index: number;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+interface CloudLayout {
+  words: PlacedWord[];
+  width: number;
+  height: number;
+}
+
+/**
+ * Classic word-cloud layout: archimedean spiral placement with collision
+ * detection (à la Wordle). Words are measured on a canvas, placed biggest
+ * first from the center outward along a spiral, never overlapping. Each
+ * word's spiral direction/start angle is seeded from its tag id, so the
+ * scatter looks organic but stays stable across renders. Adding a tag just
+ * re-runs the layout — collisions can never happen by construction.
+ */
+function layoutCloud(tags: CloudTag[]): CloudLayout {
+  if (tags.length === 0 || typeof document === 'undefined') {
+    return { words: [], width: 0, height: 0 };
   }
-  return order;
+
+  const ctx = document.createElement('canvas').getContext('2d');
+  const PAD_X = 16;
+  const PAD_Y = 12;
+
+  const measured = tags.map((tag, index) => {
+    const px = SIZE_PX[tag.size];
+    let textWidth = tag.label.length * px * 0.55;
+    if (ctx) {
+      ctx.font = `400 ${px}px Manrope, sans-serif`;
+      textWidth = ctx.measureText(tag.label).width;
+    }
+    return { index, width: textWidth + PAD_X, height: px + PAD_Y };
+  });
+
+  // Biggest words first, placed from the center outward.
+  const placementOrder = [...measured].sort((a, b) => b.width * b.height - a.width * a.height);
+  const placed: { index: number; x: number; y: number; width: number; height: number }[] = [];
+
+  const collides = (x: number, y: number, width: number, height: number) =>
+    placed.some(
+      (p) => Math.abs(p.x - x) * 2 < p.width + width && Math.abs(p.y - y) * 2 < p.height + height
+    );
+
+  for (const item of placementOrder) {
+    const seed = hashSeed(tags[item.index].id);
+    const dir = seed % 2 === 0 ? 1 : -1;
+    let t = ((seed % 628) / 100) * dir; // random-ish start angle
+    let x = 0;
+    let y = 0;
+    let guard = 0;
+    do {
+      const r = 5.2 * Math.abs(t);
+      x = Math.cos(t) * r * 1.5; // elliptical: wider than tall
+      y = Math.sin(t) * r * 0.82;
+      t += 0.3 * dir;
+    } while (collides(x, y, item.width, item.height) && ++guard < 1200);
+    placed.push({ ...item, x, y });
+  }
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const p of placed) {
+    minX = Math.min(minX, p.x - p.width / 2);
+    maxX = Math.max(maxX, p.x + p.width / 2);
+    minY = Math.min(minY, p.y - p.height / 2);
+    maxY = Math.max(maxY, p.y + p.height / 2);
+  }
+
+  return {
+    words: placed.map((p) => ({
+      index: p.index,
+      left: p.x - p.width / 2 - minX,
+      top: p.y - p.height / 2 - minY,
+      width: p.width,
+      height: p.height,
+    })),
+    width: maxX - minX,
+    height: maxY - minY,
+  };
 }
 
 const TagWordCloud = memo(function TagWordCloud({ tags, activeTagIds, onTagClick, ariaLabel }: TagWordCloudProps) {
-  const order = useMemo(() => interleaveBySize(tags), [tags]);
+  const layout = useMemo(() => layoutCloud(tags), [tags]);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  // Scale the whole cloud down (never up) to fit narrow viewports, keeping
+  // the collision-free layout intact.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap || layout.width === 0) return;
+    const update = () => {
+      const available = wrap.clientWidth;
+      setScale(Math.min(1, available / layout.width));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, [layout.width]);
 
   return (
-    <div className="tag-word-cloud" role="list" aria-label={ariaLabel}>
-      {order.map((idx, position) => {
-        const tag = tags[idx];
-        // Deterministic vertical nudge only — keeps words straight while
-        // giving the cloud an organic, uneven silhouette. No rotation, no
-        // horizontal jitter, so words never overlap and always reflow
-        // cleanly when tags are added or removed.
-        const marginTop = 1 + seededRandom(idx, 3) * 9;
-        const marginBottom = 1 + seededRandom(idx, 4) * 9;
-
-        return (
-          <button
-            key={tag.id}
-            type="button"
-            role="listitem"
-            className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
-            style={{ marginTop, marginBottom }}
-            onClick={() => onTagClick(tag.id)}
-            aria-pressed={activeTagIds.has(tag.id)}
-          >
-            {tag.label}
-          </button>
-        );
-      })}
+    <div className="tag-word-cloud" ref={wrapRef} role="list" aria-label={ariaLabel}>
+      <div
+        className="tag-cloud-stage"
+        style={{ width: layout.width * scale, height: layout.height * scale }}
+      >
+        <div
+          className="tag-cloud-scatter"
+          style={{
+            width: layout.width,
+            height: layout.height,
+            transform: scale !== 1 ? `scale(${scale})` : undefined,
+          }}
+        >
+          {layout.words.map((word) => {
+            const tag = tags[word.index];
+            return (
+              <button
+                key={tag.id}
+                type="button"
+                role="listitem"
+                className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
+                style={{ left: word.left, top: word.top }}
+                onClick={() => onTagClick(tag.id)}
+                aria-pressed={activeTagIds.has(tag.id)}
+              >
+                {tag.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 });
