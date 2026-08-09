@@ -28,7 +28,7 @@ export const GET: APIRoute = async ({ url }) => {
         'Content-Type': 'application/json; charset=utf-8',
         'Cache-Control': force
           ? 'no-store'
-          : 'public, max-age=0, s-maxage=300, stale-while-revalidate=3600',
+          : 'public, max-age=0, s-maxage=30, stale-while-revalidate=120',
       },
     }
   );

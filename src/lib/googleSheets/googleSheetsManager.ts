@@ -11,7 +11,7 @@ const R2_PUBLIC_HOST = 'pub-ab92f061862e4c32b9117317c7b77334.r2.dev';
 
 const memoryCache = new Map<string, { data: ParsedCmsData; storedAt: number }>();
 const CACHE_KEY = 'anyCms';
-const CACHE_TTL_MS = 300_000;
+const CACHE_TTL_MS = 60_000;
 
 export function clearMemoryCache(): void {
   memoryCache.delete(CACHE_KEY);
