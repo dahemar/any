@@ -11,7 +11,7 @@
 }
 
 .hero-title {
-  margin: 0 0 1.6rem;
+  margin: 0 0 1.2rem;
   font-size: var(--any-type-nav, 0.88rem);
   font-weight: 400;
   letter-spacing: -0.02em;
@@ -19,42 +19,18 @@
   text-align: left;
 }
 
-/* Logo 2 — secondary mark, left-aligned, desktop only. Same burgundy
-   filter treatment as the primary logo. */
-.hero-logo2-container {
-  display: none;
-}
-
-.hero-logo2 {
-  display: block;
-  height: 100%;
-  width: auto;
-  object-fit: contain;
-  object-position: left center;
-  transition: filter 0.35s ease-out;
-}
-
-@media (min-width: 769px) {
-  .hero-logo2-container {
-    display: block;
-    width: 100%;
-    height: 2.8rem;
-    margin-bottom: 1rem;
-  }
-}
-
 .hero-logo-container {
   width: 100%;
   height: 5rem;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.4rem;
 }
 
 .hero-logo {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: fill;
-  object-position: center;
+  object-fit: contain;
+  object-position: left center;
   transition: filter 0.35s ease-out;
 }
 
@@ -74,6 +50,19 @@
   margin-top: 0.55rem;
 }
 
+/* Desktop: leave room for the fixed credits panel (26% + 1.75rem gap)
+   so the waveform logo and hero text fit entirely to its left and the
+   "anyway" wordmark on the right edge is always visible. */
+@media (min-width: 769px) {
+  .hero-page {
+    padding-right: calc(26% + 1.75rem);
+  }
+
+  .hero-logo-container {
+    height: 7rem;
+  }
+}
+
 @media (max-width: 768px) {
   .hero-page {
     padding: 1rem 0.875rem 2.2rem;
@@ -85,6 +74,6 @@
 
   .hero-logo-container {
     height: 3.5rem;
-    margin-bottom: 0.55rem;
+    margin-bottom: 0.3rem;
   }
 }

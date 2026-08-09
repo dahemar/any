@@ -74,15 +74,6 @@ export default function HeroPage({ intro = defaultIntro }: { intro?: ParsedIntro
           draggable={false}
         />
       </div>
-      <div className="hero-logo2-container">
-        <img
-          src="/logo2.png"
-          alt=""
-          className="hero-logo2"
-          style={logoStyle}
-          draggable={false}
-        />
-      </div>
       <div className="hero-text" style={textStyle}>
         <h2 className="hero-title">{intro.title}</h2>
         {intro.description.map((paragraph, i) => (
