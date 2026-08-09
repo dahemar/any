@@ -37,8 +37,20 @@ function tagsFromWorks(works: Work[]): TagDefinition[] {
 export function mergeTagDefinitions(sheetTags: TagDefinition[], works: Work[]): TagDefinition[] {
   const merged = new Map<string, TagDefinition>();
 
-  for (const tag of [...FALLBACK_TAGS, ...sheetTags, ...tagsFromWorks(works)]) {
+  // Sheet tags are authoritative — they define the canonical category.
+  for (const tag of sheetTags) {
     merged.set(tag.id, tag);
+  }
+
+  // Fallback definitions fill gaps the sheet didn't cover.
+  for (const tag of FALLBACK_TAGS) {
+    if (!merged.has(tag.id)) merged.set(tag.id, tag);
+  }
+
+  // Tags discovered in works but missing from both the sheet and
+  // fallback definitions are a last resort (inferCategory is a best-guess).
+  for (const tag of tagsFromWorks(works)) {
+    if (!merged.has(tag.id)) merged.set(tag.id, tag);
   }
 
   return Array.from(merged.values()).sort((a, b) => a.label.localeCompare(b.label));
