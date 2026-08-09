@@ -97,15 +97,12 @@ const TagWordCloud = memo(function TagWordCloud({ tags, activeTagIds, onTagClick
     <div className="tag-word-cloud" role="list" aria-label={ariaLabel}>
       {order.map((idx, position) => {
         const tag = tags[idx];
-        const rotation = (seededRandom(idx, 1) - 0.5) * 6;
-        const jitterX = (seededRandom(idx, 2) - 0.5) * 8;
-        const marginTop = 2 + seededRandom(idx, 3) * 12;
-        const marginBottom = 2 + seededRandom(idx, 4) * 10;
-        const hSlot = Math.floor(seededRandom(idx, 5) * 3);
-        const hStyle: React.CSSProperties =
-          hSlot === 0 ? { marginRight: 'auto' } :
-          hSlot === 1 ? { marginLeft: 'auto', marginRight: 'auto' } :
-          { marginLeft: 'auto' };
+        // Deterministic vertical nudge only — keeps words straight while
+        // giving the cloud an organic, uneven silhouette. No rotation, no
+        // horizontal jitter, so words never overlap and always reflow
+        // cleanly when tags are added or removed.
+        const marginTop = 1 + seededRandom(idx, 3) * 9;
+        const marginBottom = 1 + seededRandom(idx, 4) * 9;
 
         return (
           <button
@@ -113,13 +110,7 @@ const TagWordCloud = memo(function TagWordCloud({ tags, activeTagIds, onTagClick
             type="button"
             role="listitem"
             className={`tag-cloud-word tag-cloud-word--${tag.size} tag-cloud-word--c${tag.colorIndex} ${activeTagIds.has(tag.id) ? 'active' : ''}`}
-            style={{
-              ...hStyle,
-              '--tag-rotate': `${rotation}deg`,
-              '--tag-jitter-x': `${jitterX}px`,
-              marginTop,
-              marginBottom,
-            } as React.CSSProperties}
+            style={{ marginTop, marginBottom }}
             onClick={() => onTagClick(tag.id)}
             aria-pressed={activeTagIds.has(tag.id)}
           >
