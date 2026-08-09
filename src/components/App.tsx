@@ -43,7 +43,7 @@ export default function App({ works: worksProp, tags: tagsProp, intro }: AppProp
     };
 
     refresh();
-    const interval = setInterval(refresh, 60_000);
+    const interval = setInterval(refresh, 15_000);
     const onFocus = () => refresh();
     window.addEventListener('focus', onFocus);
 

@@ -12,7 +12,7 @@ const { works, tags, intro } = cms;
 // for fresh data, so a short s-maxage is enough.
 Astro.response.headers.set(
   'Cache-Control',
-  'public, max-age=0, s-maxage=60, stale-while-revalidate=300'
+  'public, max-age=0, s-maxage=5, stale-while-revalidate=60'
 );
 ---
 
