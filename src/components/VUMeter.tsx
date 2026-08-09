@@ -15,7 +15,7 @@ const initGlobalAudioContext = () => {
       GLOBAL_AUDIO_CONTEXT = new AudioContextClass();
       GLOBAL_ANALYSER = GLOBAL_AUDIO_CONTEXT.createAnalyser();
       GLOBAL_ANALYSER.fftSize = 256;
-      GLOBAL_ANALYSER.smoothingTimeConstant = 0.8;
+      GLOBAL_ANALYSER.smoothingTimeConstant = 0.55;
       
       GLOBAL_ANALYSER.connect(GLOBAL_AUDIO_CONTEXT.destination);
       
@@ -147,11 +147,18 @@ export default function VUMeter({ videoRef, audioRef, currentWorkIndex, currentS
     const frequencies = freqScratchRef.current;
     const waveform = waveScratchRef.current;
     const time = performance.now() / 1000;
-    const base = Math.sin(time * 1.5) * 0.25 + 0.55;
+
+    // Multiple drifting harmonics so peaks and valleys genuinely reshape
+    // over time instead of a fixed silhouette wobbling in place.
     for (let i = 0; i < bufferLength; i += 1) {
-      const phase = (i / bufferLength) * Math.PI * 2;
-      frequencies[i] = Math.max(0.04, base * (0.25 + 0.5 * Math.sin(phase + time * 1.2)));
-      waveform[i] = Math.sin(phase * 2 + time * 3.5) * 0.45 * frequencies[i];
+      const f = i / bufferLength;
+      const h1 = Math.sin(f * Math.PI * 2 * (2.2 + Math.sin(time * 0.31) * 1.4) + time * 2.1);
+      const h2 = Math.sin(f * Math.PI * 2 * (5.1 + Math.sin(time * 0.17) * 2.2) - time * 1.3);
+      const h3 = Math.sin(f * Math.PI * 2 * (9.7 + Math.cos(time * 0.23) * 3.1) + time * 3.7);
+      const energy = 0.45 + 0.3 * Math.sin(time * 0.9) * Math.sin(time * 0.37);
+      const v = (h1 * 0.55 + h2 * 0.3 + h3 * 0.15) * energy;
+      waveform[i] = v * 0.7;
+      frequencies[i] = Math.max(0.03, Math.abs(v) * (0.6 + 0.4 * Math.sin(time * 1.7 + f * 9)));
     }
 
     return { waveform, frequencies };
@@ -191,155 +198,135 @@ export default function VUMeter({ videoRef, audioRef, currentWorkIndex, currentS
     }
   };
 
-  // Draw elegant, complex, fluid auroral waveform
-  const drawWaveform = (waveform: number[], frequencies: number[]) => {
+  // Pencil-sketch waveform: layered burgundy strokes with hand-tremor
+  // wobble, pressure-weighted segments and tapered ends — matching the
+  // hand-drawn logo style, but driven by the live audio analyser.
+  const drawWaveform = (waveform: number[], frequencies: number[], time: number) => {
     if (!waveformRef.current) return;
-    
+
     const canvas = waveformRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const width = canvas.width;
     const height = canvas.height;
-    
+
     ctx.clearRect(0, 0, width, height);
 
-    // Calculate base energy for dynamic effects (glow, intensity)
-    const totalEnergy = frequencies.reduce((a, b) => a + b, 0) / (frequencies.length || 1);
+    const points = waveform.length;
+    if (!points) return;
 
-    // Create a sophisticated horizontal gradient for perfect fading edges
-    const getGradient = (maxAlpha: number) => {
-      const grad = ctx.createLinearGradient(0, 0, width, 0);
-      grad.addColorStop(0, 'rgba(122, 33, 49, 0)');
-      grad.addColorStop(0.25, `rgba(122, 33, 49, ${maxAlpha * 0.5})`);
-      grad.addColorStop(0.5, `rgba(122, 33, 49, ${maxAlpha})`);
-      grad.addColorStop(0.75, `rgba(122, 33, 49, ${maxAlpha * 0.5})`);
-      grad.addColorStop(1, 'rgba(122, 33, 49, 0)');
-      return grad;
+    const totalEnergy = frequencies.reduce((a, b) => a + b, 0) / (frequencies.length || 1);
+    const isSilent =
+      !waveform.length ||
+      (totalEnergy < 0.01 && waveform.every((w) => Math.abs(w) < 0.01));
+
+    const t = time / 1000;
+    const ACCENT = '122, 33, 49';
+    const amplitude = height * 0.42;
+
+    // Light smoothing on the time-domain wave only — the frequency bins
+    // stay raw so each frame's spectral peaks carve real new valleys.
+    const wave = waveform.map((v, i) => {
+      const p = waveform[Math.max(0, i - 1)] ?? v;
+      const n = waveform[Math.min(points - 1, i + 1)] ?? v;
+      return (p + v * 2 + n) / 4;
+    });
+    const freq = frequencies;
+
+    // Frequency average — used to make the spectrum bipolar (peaks AND
+    // valleys that actually move with the music, not a uniform offset).
+    const freqAvg = freq.reduce((a, b) => a + b, 0) / (freq.length || 1);
+
+    // Wide envelope: only the very ends settle flat, most of the line is
+    // free to form peaks.
+    const env = (i: number) => Math.pow(Math.sin((Math.PI * i) / (points - 1)), 0.7);
+
+    // Smooth animated pseudo-noise = hand tremor (texture, not shape).
+    const noise = (i: number, phase: number, speed: number) =>
+      Math.sin(i * 0.9 + t * speed + phase) * 0.6 +
+      Math.sin(i * 0.23 - t * speed * 0.7 + phase * 2) * 0.4;
+
+    const pointAt = (
+      i: number,
+      waveGain: number,
+      freqGain: number,
+      wobbleAmp: number,
+      phase: number,
+      harmonic: number
+    ) => {
+      const f = i / (points - 1);
+      const x = f * width;
+      const e = env(i);
+      // Bipolar spectral drive + time-domain wave = peaks/valleys that
+      // reshape every frame with the music.
+      const signal = (wave[i] * waveGain + (freq[i] - freqAvg) * 2.2 * freqGain) * e;
+      const wobble = noise(i, phase, 1.1) * wobbleAmp * (0.3 + 0.7 * e);
+      const curl = Math.sin(f * Math.PI * 2 * harmonic + t * 1.7 + phase) * 0.03 * e;
+      const y = height / 2 - (signal + curl) * amplitude + wobble;
+      return { x, y };
     };
 
-    // Detect practically silent state to flatten gracefully
-    const isSilent = !waveform.length || 
-      (totalEnergy < 0.01 && waveform.every(w => Math.abs(w) < 0.01));
+    const strokePass = (opts: {
+      waveGain: number;
+      freqGain: number;
+      alpha: number;
+      width: number;
+      wobble: number;
+      phase: number;
+      harmonic: number;
+    }) => {
+      ctx.beginPath();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = opts.width;
+      ctx.strokeStyle = `rgba(${ACCENT}, ${opts.alpha})`;
+      for (let i = 0; i < points; i++) {
+        const { x, y } = pointAt(i, opts.waveGain, opts.freqGain, opts.wobble, opts.phase, opts.harmonic);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    };
 
     if (isSilent) {
+      // Resting pencil line with a faint tremor.
       ctx.beginPath();
-      ctx.strokeStyle = getGradient(0.3); // Subtle resting gradient
       ctx.lineWidth = 1;
-      ctx.moveTo(0, height / 2);
-      ctx.lineTo(width, height / 2);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = `rgba(${ACCENT}, 0.32)`;
+      for (let i = 0; i < points; i++) {
+        const x = (i / (points - 1)) * width;
+        const y = height / 2 + noise(i, 0, 0.8) * 0.6;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
       ctx.stroke();
       return;
     }
 
-    // Heavy smooth for the frequency data to create fluid, breathing hills
-    let smoothFreqs = [...frequencies];
-    for (let pass = 0; pass < 3; pass++) {
-      smoothFreqs = smoothFreqs.map((v, i, arr) => {
-         const p2 = arr[Math.max(0, i - 2)] || v;
-         const p1 = arr[Math.max(0, i - 1)] || v;
-         const n1 = arr[Math.min(arr.length - 1, i + 1)] || v;
-         const n2 = arr[Math.min(arr.length - 2, i + 2)] || v;
-         return (p2 + p1 + v * 2 + n1 + n2) / 6;
-      });
-    }
+    // Main confident stroke — full spectral drive.
+    strokePass({ waveGain: 1.1, freqGain: 1.0, alpha: 0.8, width: 1.5, wobble: 0.55, phase: 0, harmonic: 7 });
+    // Sketch echo — the artist redrawing the line, reading the wave more.
+    strokePass({ waveGain: 0.9, freqGain: 0.75, alpha: 0.32, width: 0.9, wobble: 1.0, phase: 2.1, harmonic: 11 });
+    // Loose inverted under-sketch for depth.
+    strokePass({ waveGain: -0.55, freqGain: -0.4, alpha: 0.2, width: 0.8, wobble: 1.4, phase: 4.4, harmonic: 5 });
 
-    // Smooth time domain to keep the macro movements and drop harsh static/noise
-    let smoothWave = [...waveform];
-    for (let pass = 0; pass < 2; pass++) {
-      smoothWave = smoothWave.map((v, i, arr) => {
-         const p1 = arr[Math.max(0, i - 1)] || v;
-         const n1 = arr[Math.min(arr.length - 1, i + 1)] || v;
-         return (p1 + v * 2 + n1) / 4;
-      });
-    }
-
-    const points = waveform.length;
-
-    // Helper to draw interlocking symmetrical fluid ribbons with studio-finish gradients
-    const drawFilledRibbon = (
-      timeScale: number, 
-      freqScale: number, 
-      strokeMaxOpacity: number, 
-      fillMaxOpacity: number,
-      addGlow = false
-    ) => {
+    // Pressure emphasis: re-ink short segments where the music peaks.
+    ctx.lineWidth = 2.1;
+    ctx.strokeStyle = `rgba(${ACCENT}, 0.26)`;
+    const SEG = 6;
+    for (let s = 0; s < points - SEG; s += SEG) {
+      const local = Math.abs(wave[s]) + Math.abs(freq[s] - freqAvg) * 2;
+      if (local < 0.3) continue;
       ctx.beginPath();
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-      
-      const getAmp = (i: number) => {
-        // Hanning-like window function for a tight core, flattening earlier at edges
-        const fraction = i / (points - 1);
-        const env = Math.pow(Math.sin(Math.PI * fraction), 2.5);
-        const f = smoothFreqs[i] * freqScale;
-        const w = smoothWave[i] * timeScale;
-        
-        return (f + w) * env * (height / 2);
-      };
-
-      // Top edge
-      for (let i = 0; i < points; i++) {
-        const x = (i / (points - 1)) * width;
-        const y = height / 2 - getAmp(i);
-        if (i === 0) ctx.moveTo(x, y);
+      for (let i = s; i <= Math.min(s + SEG, points - 1); i++) {
+        const { x, y } = pointAt(i, 1.1, 1.0, 0.55, 0, 7);
+        if (i === s) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-
-      // Bottom edge mirroring backwards
-      for (let i = points - 1; i >= 0; i--) {
-        const x = (i / (points - 1)) * width;
-        const y = height / 2 + getAmp(i);
-        ctx.lineTo(x, y);
-      }
-      
-      ctx.closePath();
-      
-      ctx.fillStyle = getGradient(fillMaxOpacity);
-      ctx.fill();
-      
-      if (strokeMaxOpacity > 0) {
-        if (addGlow) {
-          // Dynamic glow based on real-time audio energy
-          const glowIntensity = Math.min(1.0, totalEnergy * 1.5);
-          ctx.shadowBlur = 8 + (glowIntensity * 12);
-          ctx.shadowColor = `rgba(122, 33, 49, ${0.4 + glowIntensity * 0.4})`;
-        }
-
-        ctx.lineWidth = addGlow ? 1.2 : 0.8;
-        ctx.strokeStyle = getGradient(strokeMaxOpacity);
-        ctx.stroke();
-
-        // Reset shadow to prevent bleeding to other layers
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = 'transparent';
-      }
-    };
-
-    // 1. Slow, faint outer aura (mostly driven by frequencies/bass)
-    drawFilledRibbon(0.15, 0.75, 0.05, 0.04);
-    
-    // 2. Medium interlocking ribbon (mix of wave and frequency)
-    drawFilledRibbon(0.55, 0.40, 0.15, 0.08);
-    
-    // 3. Inverted wave ribbon (intersects beautifully with #2)
-    drawFilledRibbon(-0.65, 0.30, 0.20, 0.06);
-
-    // 4. Central tight reactive core thread (high time-reactivity, with dynamic glow)
-    drawFilledRibbon(0.85, 0.10, 0.50, 0.20, true);
-
-    // 5. Elegant sharp central spine for visual anchorage (laser sharp, no glow)
-    ctx.beginPath();
-    ctx.strokeStyle = getGradient(0.85);
-    ctx.lineWidth = 1;
-    for (let i = 0; i < points; i++) {
-        const x = (i / (points - 1)) * width;
-        const env = Math.pow(Math.sin(Math.PI * (i / (points - 1))), 3);
-        const y = height / 2 + (smoothWave[i] * 0.5 * env * (height / 2));
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+      ctx.stroke();
     }
-    ctx.stroke();
   };
 
   useEffect(() => {
@@ -359,7 +346,7 @@ export default function VUMeter({ videoRef, audioRef, currentWorkIndex, currentS
 
       lastDrawRef.current = time;
       const { waveform, frequencies } = getAudioData();
-      drawWaveform(waveform, frequencies);
+      drawWaveform(waveform, frequencies, time);
     };
 
     intervalRef.current = requestAnimationFrame(animate);
