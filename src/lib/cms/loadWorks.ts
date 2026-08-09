@@ -2,7 +2,7 @@ import { works as fallbackWorks } from '../../data/works';
 import type { TagDefinition, Work, WorksStats } from '../types';
 import { loadCmsData } from '../googleSheets/googleSheetsManager';
 import type { ParsedIntro } from '../googleSheets/parseAnyWorks';
-import { mergeTagDefinitions } from './tags';
+import { filterWorksTags, mergeTagDefinitions } from './tags';
 
 export interface SiteCmsData {
   works: Work[];
@@ -23,17 +23,19 @@ export async function loadSiteCms(options?: { force?: boolean }): Promise<SiteCm
   const remote = await loadCmsData(options);
 
   if (remote.works.length > 0) {
+    const tags = mergeTagDefinitions(remote.tags, remote.works);
     return {
-      works: remote.works,
-      tags: mergeTagDefinitions(remote.tags, remote.works),
+      works: filterWorksTags(remote.works, tags),
+      tags,
       intro: remote.intro || fallbackIntro,
       source: 'sheets',
     };
   }
 
+  const tags = mergeTagDefinitions([], fallbackWorks);
   return {
-    works: fallbackWorks,
-    tags: mergeTagDefinitions([], fallbackWorks),
+    works: filterWorksTags(fallbackWorks, tags),
+    tags,
     intro: fallbackIntro,
     source: 'fallback',
   };
